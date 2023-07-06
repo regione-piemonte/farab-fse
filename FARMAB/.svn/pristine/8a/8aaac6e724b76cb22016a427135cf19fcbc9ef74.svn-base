@@ -1,0 +1,90 @@
+package it.csi.dma.farmab.util;
+
+public class EventoPerNotificatore {
+	
+	private long id;
+	private String codiceEvento;
+	private String descrizioneEvento;
+	private String msgMail;
+	private String msgSms; 
+	private String msgPush;
+	private String msgMex;
+	private String dataInserimento;
+	private String dataAggiornamento;
+	
+	public EventoPerNotificatore(long id, String codiceEvento, String descrizioneEvento,
+			String msgMail, String msgSms, String msgPush, String msgMex, 
+			String dataInserimento, String dataAggiornamento) {
+		super();
+		this.id = id;
+		this.codiceEvento = codiceEvento;
+		this.descrizioneEvento = descrizioneEvento;
+		this.msgMail = msgMail;
+		this.msgSms = msgSms;
+		this.msgPush = msgPush;
+		this.msgMex = msgMex;
+		this.dataInserimento = dataInserimento;
+		this.dataAggiornamento = dataAggiornamento;
+	}
+	
+	public long getId() {
+		return id;
+	}
+	public void setId(long id) {
+		this.id = id;
+	}
+	public String getCodiceEvento() {
+		return codiceEvento;
+	}
+	public void setCodiceEvento(String codiceEvento) {
+		this.codiceEvento = codiceEvento;
+	}
+	public String getDescrizioneEvento() {
+		return descrizioneEvento;
+	}
+	public void setDescrizioneEvento(String descrizioneEvento) {
+		this.descrizioneEvento = descrizioneEvento;
+	}
+	public String getMsgMail() {
+		return msgMail;
+	}
+	public void setMsgMail(String msgMail) {
+		this.msgMail = msgMail;
+	}
+	public String getMsgSms() {
+		return msgSms;
+	}
+	public void setMsgSms(String msgSms) {
+		this.msgSms = msgSms;
+	}
+	public String getMsgPush() {
+		return msgPush;
+	}
+	public void setMsgPush(String msgPush) {
+		this.msgPush = msgPush;
+	}
+	public String getMsgMex() {
+		return msgMex;
+	}
+	public void setMsgMex(String msgMex) {
+		this.msgMex = msgMex;
+	}
+	public String getDataInserimento() {
+		return dataInserimento;
+	}
+	public void setDataInserimento(String dataInserimento) {
+		this.dataInserimento = dataInserimento;
+	}
+	public String getDataAggiornamento() {
+		return dataAggiornamento;
+	}
+	public void setDataAggiornamento(String dataAggiornamento) {
+		this.dataAggiornamento = dataAggiornamento;
+	}
+	
+	
+	
+	
+
+
+}

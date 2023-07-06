@@ -1,0 +1,84 @@
+/*******************************************************************************
+* Copyright Regione Piemonte - 2023
+* SPDX-License-Identifier: EUPL-1.2
+******************************************************************************/
+
+
+package it.csi.ricercadocumentiini.dmacc;
+
+import javax.xml.bind.JAXBElement;
+import javax.xml.bind.annotation.XmlElementDecl;
+import javax.xml.bind.annotation.XmlRegistry;
+import javax.xml.namespace.QName;
+
+
+/**
+ * This object contains factory methods for each 
+ * Java content interface and Java element interface 
+ * generated in the it.csi.ricercadocumentiini.dmacc package. 
+ * <p>An ObjectFactory allows you to programatically 
+ * construct new instances of the Java representation 
+ * for XML content. The Java representation of XML 
+ * content can consist of schema derived interfaces 
+ * and classes representing the binding of schema 
+ * type definitions, element declarations and model 
+ * groups.  Factory methods for each of these are 
+ * provided in this class.
+ * 
+ */
+@XmlRegistry
+public class ObjectFactory {
+
+    private final static QName _RicercaDocumenti_QNAME = new QName("http://dmacc.csi.it/", "ricercaDocumenti");
+    private final static QName _RicercaDocumentiResponse_QNAME = new QName("http://dmacc.csi.it/", "ricercaDocumentiResponse");
+
+    /**
+     * Create a new ObjectFactory that can be used to create new instances of schema derived classes for package: it.csi.ricercadocumentiini.dmacc
+     * 
+     */
+    public ObjectFactory() {
+    }
+
+    /**
+     * Create an instance of {@link RicercaDocumentiResponse }
+     * 
+     */
+    public RicercaDocumentiResponse createRicercaDocumentiResponse() {
+        return new RicercaDocumentiResponse();
+    }
+
+    /**
+     * Create an instance of {@link RicercaDocumentiRequeste }
+     * 
+     */
+    public RicercaDocumentiRequeste createRicercaDocumentiRequeste() {
+        return new RicercaDocumentiRequeste();
+    }
+
+    /**
+     * Create an instance of {@link ServiceResponse }
+     * 
+     */
+    public ServiceResponse createServiceResponse() {
+        return new ServiceResponse();
+    }
+
+    /**
+     * Create an instance of {@link JAXBElement }{@code <}{@link RicercaDocumentiRequeste }{@code >}}
+     * 
+     */
+    @XmlElementDecl(namespace = "http://dmacc.csi.it/", name = "ricercaDocumenti")
+    public JAXBElement<RicercaDocumentiRequeste> createRicercaDocumenti(RicercaDocumentiRequeste value) {
+        return new JAXBElement<RicercaDocumentiRequeste>(_RicercaDocumenti_QNAME, RicercaDocumentiRequeste.class, null, value);
+    }
+
+    /**
+     * Create an instance of {@link JAXBElement }{@code <}{@link RicercaDocumentiResponse }{@code >}}
+     * 
+     */
+    @XmlElementDecl(namespace = "http://dmacc.csi.it/", name = "ricercaDocumentiResponse")
+    public JAXBElement<RicercaDocumentiResponse> createRicercaDocumentiResponse(RicercaDocumentiResponse value) {
+        return new JAXBElement<RicercaDocumentiResponse>(_RicercaDocumentiResponse_QNAME, RicercaDocumentiResponse.class, null, value);
+    }
+
+}

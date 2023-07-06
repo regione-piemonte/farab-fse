@@ -1,0 +1,349 @@
+<?xml version="1.0" encoding="UTF-8"?><wsdl:definitions xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:tns="http://farmab.csi.it/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:ns1="http://schemas.xmlsoap.org/soap/http" name="GetDeviceCertificatoService" targetNamespace="http://farmab.csi.it/">
+	<wsdl:types>
+		<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://farmab.csi.it/"  xmlns:ns1="fonteCittadino" attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="http://farmab.csi.it/">
+			<xs:complexType name="fonte_citt">
+				<xs:complexContent>
+					<xs:extension base="tns:codifica">
+						<xs:sequence>
+							<xs:element form="qualified" minOccurs="0" name="tipoFonte" type="tns:tipoFonte"/>
+						</xs:sequence>
+					</xs:extension>
+				</xs:complexContent>
+			</xs:complexType>
+
+			<!--xs:complexType name="consenso_citt">
+				<xs:sequence>
+					<xs:element form="qualified" name="cfCittadino" type="xs:string"/>
+					<xs:element form="qualified" minOccurs="0" name="cfDelegato" type="xs:string"/>
+					<xs:element form="qualified" minOccurs="0" name="idAura" type="xs:string"/>
+					<xs:element form="qualified" minOccurs="0" name="nome" type="xs:string"/>
+					<xs:element form="qualified" minOccurs="0" name="cognome" type="xs:string"/>
+					<xs:element form="qualified" name="dataAcquisizione" type="xs:dateTime"/>
+					<xs:element form="qualified" name="fonte" type="tns:fonte_citt"/>
+					<xs:element form="qualified" name="tipoStato" type="tns:tipoStato"/>
+					<xs:element form="qualified" minOccurs="0" name="informativa" type="tns:informativa"/>
+					<xs:element form="qualified" minOccurs="0" name="uuid" type="xs:string"/>
+					<xs:element form="qualified" minOccurs="0" name="consensiAsr">
+						<xs:complexType>
+							<xs:sequence>
+								<xs:element form="qualified" maxOccurs="unbounded" minOccurs="0" name="consensiAsr" type="tns:consInformativa"/>
+							</xs:sequence>
+						</xs:complexType>
+					</xs:element>
+				</xs:sequence>
+			</xs:complexType-->
+			
+			<xs:complexType name="errore_citt">
+				<xs:complexContent>
+					<xs:extension base="tns:codifica">
+						<xs:sequence/>
+					</xs:extension>
+				</xs:complexContent>
+			</xs:complexType>
+			
+			<!--xs:complexType name="revocaConsensoCittadino">
+				<xs:complexContent>
+					<xs:extension base="tns:serviceRequest">
+						<xs:sequence>
+							<xs:element form="unqualified" minOccurs="0" name="consenso" type="tns:consenso_citt"/>
+						</xs:sequence>
+					</xs:extension>
+				</xs:complexContent>
+			</xs:complexType-->
+			<xs:complexType name="serviceRequest">
+				<xs:sequence>
+					<xs:element form="unqualified" name="richiedente" type="tns:richiedente"/>
+				</xs:sequence>
+			</xs:complexType>
+			<xs:complexType name="certificazioneType">
+				<xs:sequence>
+					<xs:element minOccurs="1" name="id" type="xs:string"/>
+					<xs:element minOccurs="1" name="dataCertificazione" type="xs:string"/>
+				</xs:sequence>
+			</xs:complexType>
+			<xs:complexType name="richiedente">
+				<xs:sequence>
+					<xs:element minOccurs="0" name="applicativoVerticale" type="tns:tipoCodice"/>
+					<xs:element minOccurs="0" name="applicazione" type="tns:tipoCodice"/>
+					<xs:element minOccurs="0" name="codiceFiscale" type="xs:string" maxOccurs="1"/>
+					<xs:element minOccurs="0" name="ip" type="xs:string"/>
+					<xs:element minOccurs="0" name="numeroTransazione" type="xs:string"/>
+					<xs:element minOccurs="0" name="ruolo" type="tns:tipoCodice"/>
+					<xs:element minOccurs="0" name="cfCittadino" type="xs:string"/>
+				</xs:sequence>
+			</xs:complexType>
+			<xs:complexType name="codifica">
+				<xs:complexContent>
+					<xs:extension base="tns:entita">
+						<xs:sequence>
+							<xs:element minOccurs="0" name="codice" type="xs:string"/>
+							<xs:element minOccurs="0" name="descrizione" type="xs:string"/>
+						</xs:sequence>
+					</xs:extension>
+				</xs:complexContent>
+			</xs:complexType>
+			<xs:complexType abstract="true" name="entita">
+				<xs:sequence>
+					<xs:element minOccurs="0" name="dataCreazione" type="xs:dateTime"/>
+					<xs:element minOccurs="0" name="dataModifica" type="xs:dateTime"/>
+					<xs:element minOccurs="0" name="dataCancellazione" type="xs:dateTime"/>
+					<xs:element minOccurs="0" name="loginOperazione" type="xs:string"/>
+					<xs:element minOccurs="0" name="ruoloOperazione" type="tns:ruoloOperazione"/>
+				</xs:sequence>
+			</xs:complexType>
+			<xs:complexType name="tipoFonte">
+				<xs:complexContent>
+					<xs:extension base="tns:codifica">
+						<xs:sequence/>
+					</xs:extension>
+				</xs:complexContent>
+			</xs:complexType>
+			<xs:complexType name="ruoloOperazione">
+				<xs:complexContent>
+					<xs:extension base="tns:codifica">
+						<xs:sequence/>
+					</xs:extension>
+				</xs:complexContent>
+			</xs:complexType>
+			<xs:complexType name="tipoStato">
+				<xs:complexContent>
+					<xs:extension base="tns:codifica">
+						<xs:sequence/>
+					</xs:extension>
+				</xs:complexContent>
+			</xs:complexType>
+			<xs:complexType name="informativa">
+				<xs:sequence>
+					<xs:element minOccurs="0" name="tipoConsenso" type="tns:tipoConsenso"/>
+					<xs:element minOccurs="0" name="sottoTipoConsenso" type="tns:sottoTipoConsenso"/>
+					<xs:element minOccurs="0" name="pdfInformativa" type="xs:string"/>
+					<xs:element minOccurs="0" name="dataDecorrenza" type="xs:dateTime"/>
+					<xs:element minOccurs="0" name="dataScadenza" type="xs:dateTime"/>
+				</xs:sequence>
+			</xs:complexType>
+			<xs:complexType name="tipoConsenso">
+				<xs:complexContent>
+					<xs:extension base="tns:codifica">
+						<xs:sequence/>
+					</xs:extension>
+				</xs:complexContent>
+			</xs:complexType>
+			<xs:complexType name="sottoTipoConsenso">
+				<xs:complexContent>
+					<xs:extension base="tns:codifica">
+						<xs:sequence/>
+					</xs:extension>
+				</xs:complexContent>
+			</xs:complexType>
+			<xs:complexType name="consInformativa">
+				<xs:sequence>
+					<xs:element minOccurs="0" name="tipoASR" type="tns:tipoASR"/>
+					<xs:element minOccurs="0" name="valoreConsenso" type="tns:valoreConsenso"/>
+					<xs:element minOccurs="0" name="uuid" type="xs:string"/>
+				</xs:sequence>
+			</xs:complexType>
+			<xs:complexType name="tipoASR">
+				<xs:complexContent>
+					<xs:extension base="tns:codifica">
+						<xs:sequence/>
+					</xs:extension>
+				</xs:complexContent>
+			</xs:complexType>
+			<xs:complexType name="valoreConsenso">
+				<xs:complexContent>
+					<xs:extension base="tns:codifica">
+						<xs:sequence/>
+					</xs:extension>
+				</xs:complexContent>
+			</xs:complexType>
+			
+			
+			<xs:complexType name="serviceResponse">
+				<xs:sequence>
+					<xs:element form="unqualified" minOccurs="0" name="esito" type="xs:string"/>
+					<xs:element form="unqualified" maxOccurs="unbounded" minOccurs="0" name="elencoErrori" nillable="true" type="tns:errore_citt"/>
+				</xs:sequence>
+			</xs:complexType>
+			
+			<xs:complexType name="tipoCodice">
+				<xs:sequence>
+					<xs:element minOccurs="1" name="codice" type="xs:string"/>
+					<xs:element minOccurs="0" name="descrizione" type="xs:string" maxOccurs="1"/>
+				</xs:sequence>
+			</xs:complexType>
+			<xs:complexType name="asr">
+				<xs:sequence>
+					<xs:element minOccurs="1" name="codice" type="xs:string"/>
+				</xs:sequence>
+			</xs:complexType>
+			<xs:complexType name="ricevuta">
+				<xs:sequence>
+					<xs:element form="unqualified" minOccurs="1" name="esito" type="xs:string"/>
+					<xs:element form="unqualified" maxOccurs="1" minOccurs="0" name="elencoErrori" nillable="true" type="tns:elencoErroriType"/>
+				</xs:sequence>
+			</xs:complexType>
+			<xs:complexType name="errore">
+				<xs:sequence>
+					<xs:element minOccurs="1" name="codice" type="xs:string"/>
+					<xs:element minOccurs="1" name="descrizione" type="xs:string"/>
+					<!-- xs:element minOccurs="1" name="tipoErrore" type="xs:string"/-->
+				</xs:sequence>
+			</xs:complexType>
+
+			<xs:simpleType name="risultatoCodice">
+				<xs:restriction base="xs:string">
+					<xs:enumeration value="SUCCESSO"/>
+					<xs:enumeration value="FALLIMENTO"/>
+					<xs:enumeration value="BLOCCANTE"/>
+					<xs:enumeration value="AVVISO"/>
+				</xs:restriction>
+			</xs:simpleType>
+			
+			<xs:element name="notificaRevocaConsensoRichiesta">
+			    <xs:complexType>
+					<xs:sequence>
+						<xs:element form="unqualified" name="requestId" type="xs:string"/>
+					    <xs:element form="unqualified" name="codiceServizio" type="xs:string"/>
+						<xs:element form="unqualified" name="cfRichiedente" type="xs:string"/>
+						<xs:element form="unqualified" name="idAura" type="xs:string"/>
+						<xs:element form="unqualified" minOccurs="0" name="cfDelegato" type="xs:string"/>
+						<xs:element form="unqualified" minOccurs="0" name="id" type="tns:certificazioneType"/>
+						<xs:element form="unqualified" name="fonte" type="tns:tipoCodice"/>
+						<xs:element form="unqualified" name="dataAcquisizione" type="xs:string"/>
+						<xs:element form="unqualified" name="codiceTipoConsenso" type="xs:string"/>
+						<xs:element form="unqualified" name="codiceSottotipoConsenso" type="xs:string"/>
+						<xs:element form="unqualified" name="descrizioneSottotipoConsenso" type="xs:string"/>
+						<xs:element form="unqualified" name="asr" type="tns:asr"/>
+					</xs:sequence>					
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="notificaRevocaConsensoRicevuta">
+			    <xs:complexType>
+					<xs:sequence>
+						<xs:element form="unqualified" minOccurs="1" name="esito" type="xs:string"/>
+					    <xs:element form="unqualified" maxOccurs="1" minOccurs="0" name="elencoErrori" nillable="true" type="tns:elencoErroriType"/>
+					</xs:sequence>					
+				</xs:complexType>
+			</xs:element>
+			
+			<xs:element name="GetDeviceCertificatoRichiesta">
+			    <xs:complexType>
+					<xs:sequence>
+						<xs:element form="unqualified" name="richiedente" type="tns:richiedente" minOccurs="0" maxOccurs="1"/>
+						<xs:element form="unqualified" name="cfCittadino" type="xs:string"/>
+						<!--xs:element form="unqualified" name="esito" type="xs:string"/>
+						<xs:element form="unqualified" name="errori" type="tns:errore" minOccurs="1" maxOccurs="unbounded"/>
+						<xs:element form="unqualified" minOccurs="1" name="statoCertificazione" type="xs:string" maxOccurs="1"/>
+						<xs:element form="unqualified" minOccurs="0" name="datiCertificazione" type="tns:tipoId"/>
+						<xs:element form="unqualified" name="fonte" type="tns:tipoCodice"/>
+						<xs:element form="unqualified" name="numeroTelefono" type="xs:string"/>
+						<xs:element form="unqualified" name="codiceTipoConsenso" type="xs:string"/>
+						<xs:element form="unqualified" name="codiceSottotipoConsenso" type="xs:string"/>
+						<xs:element form="unqualified" name="descrizioneSottotipoConsenso" type="xs:string"/>
+						<xs:element form="unqualified" name="valoreConsenso" type="xs:string"/>
+						<xs:element form="unqualified" minOccurs="0" name="asr" type="tns:asr"/-->
+					</xs:sequence>					
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="GetDeviceCertificatoRicevuta">
+			    <xs:complexType>
+					<xs:sequence>
+						<xs:element form="unqualified" minOccurs="1" name="esito" type="xs:string"/>
+					    <xs:element form="unqualified" maxOccurs="1" minOccurs="0" name="elencoErrori" nillable="true" type="tns:elencoErroriType"/>
+					    <xs:element form="unqualified" minOccurs="1" name="statoCertificazione" type="xs:string"/>
+					    <xs:element form="unqualified" maxOccurs="1" minOccurs="0" name="datiCertificazione" nillable="true" type="tns:certificazioneType"/>
+					    <xs:element form="unqualified" maxOccurs="1" minOccurs="0" name="fonte" nillable="true" type="tns:tipoCodice"/>
+					    <xs:element form="unqualified" minOccurs="1" name="numTelefono" type="xs:string"/>
+					    <xs:element form="unqualified" minOccurs="1" name="cfCittadino" type="xs:string"/>
+					    <xs:element form="unqualified" minOccurs="1" name="dispositivo" type="xs:string"/>
+					    <xs:element form="unqualified" minOccurs="1" name="sistemaOperativo" type="xs:string"/>
+					    <xs:element form="unqualified" minOccurs="1" name="browser" type="xs:string"/>
+					    <xs:element form="unqualified" minOccurs="1" name="modello" type="xs:string"/>
+					</xs:sequence>					
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="verificaServizio">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element form="unqualified" name="requestId" type="xs:string"/>
+						<xs:element form="unqualified" name="codiceServizio" type="xs:string"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="verificaServizioRicevuta">
+				<xs:complexType>
+					<xs:sequence>						
+						<xs:element name="esito" type="xs:string"></xs:element>
+						<xs:element name="codiceServizio" type="xs:string"></xs:element>
+						<xs:element name="versione" type="xs:string"></xs:element>
+						<xs:element name="timestamp" type="xs:string"></xs:element>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+		
+			<xs:complexType name="elencoErroriType">
+
+				<xs:sequence>
+					<xs:element name="errore" type="tns:errore" minOccurs="1" maxOccurs="unbounded"></xs:element>
+				</xs:sequence>
+			</xs:complexType>
+		</xs:schema>
+
+
+
+	</wsdl:types>
+	
+	<wsdl:message name="notificaRevocaConsensoService">
+		<wsdl:part element="tns:notificaRevocaConsensoRichiesta" name="notificaRevocaConsensoRichiesta">
+		</wsdl:part>
+	</wsdl:message>
+	
+	<wsdl:message name="notificaRevocaConsensoServiceResponse">
+		<wsdl:part element="tns:notificaRevocaConsensoRicevuta" name="notificaRevocaConsensoRicevuta">
+		</wsdl:part>
+	</wsdl:message>
+	
+	<wsdl:message name="GetDeviceCertificatoService">
+		<wsdl:part element="tns:GetDeviceCertificatoRichiesta"
+			name="GetDeviceCertificatoRichiesta">
+		</wsdl:part>
+	</wsdl:message>
+	<wsdl:message name="GetDeviceCertificatoServiceResponse">
+		<wsdl:part element="tns:GetDeviceCertificatoRicevuta" name="GetDeviceCertificatoRicevuta">
+		</wsdl:part>
+	</wsdl:message>
+
+
+	<wsdl:message name="verificaServizioService">
+		<wsdl:part name="verificaServizio" element="tns:verificaServizio"></wsdl:part>
+	</wsdl:message>
+	<wsdl:message name="verificaServizioServiceResponse">
+		<wsdl:part name="verificaServizioRicevuta" element="tns:verificaServizioRicevuta"></wsdl:part>
+	</wsdl:message>
+	<wsdl:portType name="GetDeviceCertificatoService">
+
+		<wsdl:operation name="GetDeviceCertificatoService">
+			<wsdl:input message="tns:GetDeviceCertificatoService" name="GetDeviceCertificatoService">
+			</wsdl:input>
+			<wsdl:output message="tns:GetDeviceCertificatoServiceResponse" name="GetDeviceCertificatoServiceResponse">
+			</wsdl:output>
+		</wsdl:operation>
+	</wsdl:portType>
+	<wsdl:binding name="GetDeviceCertificatoServiceSoapBinding" type="tns:GetDeviceCertificatoService">
+		<soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+		<wsdl:operation name="GetDeviceCertificatoService">
+			<soap:operation soapAction="http://farmab.csi.it/GetDeviceCertificatoService/GetDeviceCertificatoService" style="document"/>
+			<wsdl:input name="GetDeviceCertificatoService">
+				<soap:body use="literal"/>
+			</wsdl:input>
+			<wsdl:output name="GetDeviceCertificatoServiceResponse">
+				<soap:body use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>				
+	</wsdl:binding>
+	<wsdl:service name="GetDeviceCertificatoService">
+		<wsdl:port binding="tns:GetDeviceCertificatoServiceSoapBinding" name="GetDeviceCertificatoServiceImplPort">
+			<soap:address location="http://localhost/farmabNotif-web/farmabNotifService"/>
+		</wsdl:port>
+	</wsdl:service>
+</wsdl:definitions>

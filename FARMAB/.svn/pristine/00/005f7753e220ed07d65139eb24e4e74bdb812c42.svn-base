@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:ns1="http://schemas.xmlsoap.org/soap/http" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tns="http://dmafarma.dma.csi.it/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" name="FarmacieServiceImplService" targetNamespace="http://dmafarma.dma.csi.it/">
+   <wsdl:types>
+      <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" attributeFormDefault="unqualified" elementFormDefault="unqualified" targetNamespace="http://dmafarma.dma.csi.it/">
+         <xs:complexType name="GetDelegantiFarmaciaRequest">
+            <xs:sequence>
+               <xs:element form="qualified" name="pinCode" type="xs:string" />
+               <xs:element form="qualified" name="datiFarmaciaRichiedente" type="tns:datiFarmaciaRichiedente" />
+               <xs:element form="qualified" name="cfCittadinoDelegato" type="xs:string" />
+            </xs:sequence>
+         </xs:complexType>
+         <xs:complexType name="datiFarmaciaRichiedente">
+            <xs:sequence>
+               <xs:element form="qualified" name="applicazione" type="xs:string" />
+               <xs:element form="qualified" name="applicativoVerticale" type="xs:string" />
+               <xs:element form="qualified" name="codFarmacia" type="xs:string" />
+               <xs:element form="qualified" name="pIvaFarmacia" type="xs:string" />
+               <xs:element form="qualified" name="cfFarmacista" type="xs:string" />
+               <xs:element form="qualified" name="ruolo" type="xs:string" />
+               <xs:element form="qualified" name="gestionale" type="xs:string" />
+            </xs:sequence>
+         </xs:complexType>
+         <xs:complexType name="GetDelegantiFarmaciaResponse">
+            <xs:sequence>
+               <xs:element form="qualified" minOccurs="0" name="codEsito" type="xs:string" />
+               <xs:element form="qualified" minOccurs="0" name="elencoErrori" type="tns:ElencoErrori" />
+               <xs:element form="qualified" minOccurs="0" name="elencoDeleganti" type="tns:ElencoDeleganti" />
+            </xs:sequence>
+         </xs:complexType>
+         <xs:complexType name="ElencoErrori">
+            <xs:sequence>
+               <xs:element form="qualified" maxOccurs="unbounded" minOccurs="0" name="errore" type="tns:errore" />
+            </xs:sequence>
+         </xs:complexType>
+         <xs:complexType name="errore">
+            <xs:sequence>
+               <xs:element form="qualified" minOccurs="0" name="codErrore" type="xs:string" />
+               <xs:element form="qualified" minOccurs="0" name="descErrore" type="xs:string" />
+            </xs:sequence>
+         </xs:complexType>
+         <xs:complexType name="ElencoDeleganti">
+            <xs:sequence>
+               <xs:element form="qualified" maxOccurs="unbounded" minOccurs="0" name="delegante" type="tns:delegante" />
+            </xs:sequence>
+         </xs:complexType>
+         <xs:complexType name="delegante">
+            <xs:sequence>
+               <xs:element form="qualified" minOccurs="0" name="codiceFiscale" type="xs:string" />
+               <xs:element form="qualified" minOccurs="0" name="cognome" type="xs:string" />
+               <xs:element form="qualified" minOccurs="0" name="nome" type="xs:string" />
+               <xs:element form="qualified" minOccurs="0" name="sesso" type="xs:string" />
+               <xs:element form="qualified" minOccurs="0" name="luogoNascita" type="xs:string" />
+               <xs:element form="qualified" minOccurs="0" name="dataNascita" type="xs:dateTime" />
+            </xs:sequence>
+         </xs:complexType>
+         <xs:complexType name="ElencoRicetteFarmaciaRequest">
+            <xs:sequence>
+               <xs:element form="qualified" name="pinCode" type="xs:string" />
+               <xs:element form="qualified" name="datiFarmaciaRichiedente" type="tns:datiFarmaciaRichiedente" />
+               <xs:element form="qualified" minOccurs="0" name="cfCittadinoDelegato" type="xs:string" />
+               <xs:element form="qualified" name="cfAssistito" type="xs:string" />
+               <xs:element form="qualified" minOccurs="0" name="codSessione" type="xs:string" />
+            </xs:sequence>
+         </xs:complexType>
+         <xs:complexType name="ElencoRicetteFarmaciaResponse">
+            <xs:sequence>
+               <xs:element form="qualified" minOccurs="0" name="codEsito" type="xs:string" />
+               <xs:element form="qualified" minOccurs="0" name="elencoErrori" type="tns:ElencoErrori" />
+               <xs:element form="qualified" minOccurs="0" name="codSessione" type="xs:string" />
+               <xs:element form="qualified" minOccurs="0" name="elencoRicette" type="tns:elencoRicette" />
+            </xs:sequence>
+         </xs:complexType>
+         <xs:complexType name="elencoRicette">
+            <xs:sequence>
+               <xs:element form="qualified" maxOccurs="unbounded" minOccurs="0" name="ricetta" type="tns:ricetta" />
+            </xs:sequence>
+         </xs:complexType>
+         <xs:complexType name="ricetta">
+            <xs:sequence>
+               <xs:element form="qualified" minOccurs="0" name="nre" type="xs:string" />
+               <xs:element form="qualified" minOccurs="0" name="dataRicetta" type="xs:dateTime" />
+               <xs:element form="qualified" minOccurs="0" name="cfMedicoPrescrittore" type="xs:string" />
+            </xs:sequence>
+         </xs:complexType>
+         <xs:element name="getDelegantiFarmacia" nillable="true" type="tns:GetDelegantiFarmaciaRequest" />
+         <xs:element name="getDelegantiFarmaciaResponse" nillable="true" type="tns:GetDelegantiFarmaciaResponse" />
+         <xs:element name="elencoRicetteFarmacia" nillable="true" type="tns:ElencoRicetteFarmaciaRequest" />
+         <xs:element name="elencoRicetteFarmaciaResponse" nillable="true" type="tns:ElencoRicetteFarmaciaResponse" />
+      </xs:schema>
+   </wsdl:types>
+   <wsdl:message name="getDelegantiFarmacia">
+      <wsdl:part element="tns:getDelegantiFarmacia" name="getDelegantiFarmacia" />
+   </wsdl:message>
+   <wsdl:message name="getDelegantiFarmaciaResponse">
+      <wsdl:part element="tns:getDelegantiFarmaciaResponse" name="getDelegantiFarmaciaResponse" />
+   </wsdl:message>
+   <wsdl:message name="elencoRicetteFarmacia">
+      <wsdl:part element="tns:elencoRicetteFarmacia" name="elencoRicetteFarmacia" />
+   </wsdl:message>
+   <wsdl:message name="elencoRicetteFarmaciaResponse">
+      <wsdl:part element="tns:elencoRicetteFarmaciaResponse" name="elencoRicetteFarmaciaResponse" />
+   </wsdl:message>
+   <wsdl:portType name="FarmacieService">
+      <wsdl:operation name="getDelegantiFarmacia">
+         <wsdl:input message="tns:getDelegantiFarmacia" name="getDelegantiFarmacia" />
+         <wsdl:output message="tns:getDelegantiFarmaciaResponse" name="getDelegantiFarmaciaResponse" />
+      </wsdl:operation>
+      <wsdl:operation name="elencoRicetteFarmacia">
+         <wsdl:input message="tns:elencoRicetteFarmacia" name="elencoRicetteFarmacia" />
+         <wsdl:output message="tns:elencoRicetteFarmaciaResponse" name="elencoRicetteFarmaciaResponse" />
+      </wsdl:operation>
+   </wsdl:portType>
+   <wsdl:binding name="FarmacieServiceImplServiceSoapBinding" type="tns:FarmacieService">
+      <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http" />
+      <wsdl:operation name="getDelegantiFarmacia">
+         <soap:operation soapAction="" style="document" />
+         <wsdl:input name="getDelegantiFarmacia">
+            <soap:body use="literal" />
+         </wsdl:input>
+         <wsdl:output name="getDelegantiFarmaciaResponse">
+            <soap:body use="literal" />
+         </wsdl:output>
+      </wsdl:operation>
+      <wsdl:operation name="elencoRicetteFarmacia">
+         <soap:operation soapAction="" style="document" />
+         <wsdl:input name="elencoRicetteFarmacia">
+            <soap:body use="literal" />
+         </wsdl:input>
+         <wsdl:output name="elencoRicetteFarmaciaResponse">
+            <soap:body use="literal" />
+         </wsdl:output>
+      </wsdl:operation>
+   </wsdl:binding>
+   <wsdl:service name="FarmacieServiceImplService">
+      <wsdl:port binding="tns:FarmacieServiceImplServiceSoapBinding" name="FarmacieServicePort">
+         <soap:address location="http://localhost:10110/farmab/FarmacieService" />
+      </wsdl:port>
+   </wsdl:service>
+</wsdl:definitions>

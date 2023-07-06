@@ -1,0 +1,60 @@
+package it.csi.dma.farmab.domain;
+
+import java.sql.Timestamp;
+
+public class DmaccDCredenzialiServizi {
+	Long id;
+	String codiceServizio;
+	String username;
+	String password;
+	Timestamp dataInizioValidita;
+	Timestamp dataFineValidita;
+	Timestamp dataInserimento;
+	
+	
+	public Long getId() {
+		return id;
+	}
+	public void setId(Long id) {
+		this.id = id;
+	}
+	public String getCodiceServizio() {
+		return codiceServizio;
+	}
+	public void setCodiceServizio(String codiceServizio) {
+		this.codiceServizio = codiceServizio;
+	}
+	public String getUsername() {
+		return username;
+	}
+	public void setUsername(String username) {
+		this.username = username;
+	}
+	public String getPassword() {
+		return password;
+	}
+	public void setPassword(String password) {
+		this.password = password;
+	}
+	public Timestamp getDataInizioValidita() {
+		return dataInizioValidita;
+	}
+	public void setDataInizioValidita(Timestamp dataInizioValidita) {
+		this.dataInizioValidita = dataInizioValidita;
+	}
+	public Timestamp getDataFineValidita() {
+		return dataFineValidita;
+	}
+	public void setDataFineValidita(Timestamp dataFineValidita) {
+		this.dataFineValidita = dataFineValidita;
+	}
+	public Timestamp getDataInserimento() {
+		return dataInserimento;
+	}
+	public void setDataInserimento(Timestamp dataInserimento) {
+		this.dataInserimento = dataInserimento;
+	}
+	
+	
+	
+}

@@ -1,0 +1,416 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cxf="http://cxf.apache.org/core"
+	xmlns:jaxws="http://cxf.apache.org/jaxws"
+	xmlns:p="http://www.springframework.org/schema/p"
+    xmlns:jms="http://www.springframework.org/schema/jms"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xmlns:tx="http://www.springframework.org/schema/tx"
+    xmlns:http="http://cxf.apache.org/transports/http/configuration"
+    xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+                          http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+							http://www.springframework.org/schema/jms http://www.springframework.org/schema/jms/spring-jms-3.0.xsd
+							http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd
+                           http://cxf.apache.org/core
+                           http://cxf.apache.org/schemas/core.xsd
+                           http://cxf.apache.org/jaxws
+                           http://cxf.apache.org/schemas/jaxws.xsd
+                           http://www.springframework.org/schema/tx
+                           http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+                           http://cxf.apache.org/transports/http/configuration
+                           http://cxf.apache.org/schemas/configuration/http-conf.xsd
+                           http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.0.xsd"
+    default-autowire="byName">
+
+    <context:component-scan base-package="it.csi.ricercadocumentiini" />
+	<context:component-scan base-package="it.csi.dma.dmafarma" />
+	<context:component-scan base-package="it.csi.dma.farmab" />
+	<context:component-scan base-package="it.csi.iccws.dmacc" />
+	<context:component-scan base-package="it.csi.dma.dmairidecache" />
+	<context:component-scan base-package="it.csi.consensoini" />
+	<context:component-scan base-package="it.csi.ricercapaziente" />
+	<context:property-placeholder location="classpath:conf.properties"/>
+
+	<import resource="classpath:META-INF/cxf/cxf.xml" />
+	<!--<import resource="classpath:META-INF/cxf/cxf-extension-soap.xml" />-->
+	<import resource="classpath:META-INF/cxf/cxf-servlet.xml" />
+	<import resource="classpath:META-INF/cxf/cxf-extension-jaxws.xml" />
+
+	<http:conduit name="*.http-conduit">
+	 <http:client AllowChunking="false" />
+	 <http:tlsClientParameters
+		disableCNCheck="true" />
+    </http:conduit>
+
+	<!-- <tx:annotation-driven transaction-manager="transactionManager" proxy-target-class="true" />-->
+
+	<!--
+	<bean id="dataSource" class="org.springframework.jndi.JndiObjectFactoryBean">
+      	<property name="jndiName" value="dma/jdbc/dmafarmabDS" />
+		<property name="proxyInterface" value="javax.sql.DataSource" />
+	</bean>
+
+    <bean id="namedJdbcTemplate" class="org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate">
+        <constructor-arg ref="dataSource"></constructor-arg>
+    </bean>
+
+	<bean id="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+	-->
+
+	<!-- ############### WS ############### -->
+	<bean id="farmacieServiceWs" class="it.csi.dma.dmafarma.FarmacieServiceImpl" >
+		<property name="delegheElencoServizi" ref="delegheElencoServizi"/>
+	</bean>
+	<bean id="farabServiceWs" class="it.csi.dma.farmab.interfacews.msg.farab.FarabServiceImpl" >
+	</bean>
+	<bean id="getDeviceCertificatoServiceWs" class="it.csi.dma.farmab.interfacews.msg.getdevicecertificato.GetDeviceCertificatoServiceImpl" >
+	</bean>
+	<bean id="setDisassociaDeviceServiceWs" class="it.csi.dma.farmab.interfacews.msg.setdisassociadevice.SetDisassociaDeviceServiceImpl" >
+	</bean>
+	<bean id="getGeneraOtpDeviceServiceWs" class="it.csi.dma.farmab.interfacews.msg.getgeneraotpdevice.GetGeneraOtpDeviceServiceImpl" >
+	</bean>
+	<bean id="getElencoFarmacieAbitualiServiceWs" class="it.csi.dma.farmab.interfacews.msg.getelencofarmacieabituali.GetElencoFarmacieAbitualiServiceImpl" >
+		<property name="delegheElencoServizi" ref="delegheElencoServizi"/>
+	</bean>
+	<bean id="setFarmaciaAbitualeServiceWs" class="it.csi.dma.farmab.interfacews.msg.setfarmaciaabituale.SetFarmaciaAbitualeServiceImpl" >
+ 		<property name="delegheElencoServizi" ref="delegheElencoServizi"/>
+	</bean>
+
+	<!-- ############### BLOCCO LCCE INIZIO (CODICE DI BOSIO)############### -->
+	 <!-- Servizio farmacie farmacisti -->
+		<bean id="farmacieServiceLCCE"
+			class="it.csi.iccws.dmacc.FarmaciaService"
+			factory-bean="cxfFarmaciaServiceClientFactory"
+			factory-method="create"/>
+
+	<bean id="cxfFarmaciaServiceClientFactory" class="org.apache.cxf.jaxws.JaxWsProxyFactoryBean">
+		<property name="serviceClass" value="it.csi.iccws.dmacc.FarmaciaService"/>
+		<property name="address" value="@endpointFarmacieServiceUrl@" />
+		<property name="outInterceptors">
+				<list>
+					<ref bean="wss4jOutSecuredFarmacisti" />
+				</list>
+		</property>
+	</bean>
+
+		<bean id="wss4jOutSecuredFarmacisti" class="org.apache.cxf.ws.security.wss4j.WSS4JOutInterceptor">
+		<constructor-arg>
+			<map>
+				<entry key="action" value=" UsernameToken " />
+				<entry key="user" value="@userFarmacie@" />
+				<entry key="passwordCallbackRef" value-ref="passwordCallback">
+				</entry>
+
+				<entry key="passwordType" value="PasswordDigest"/>
+				<entry key="mustUnderstand" value="false" />
+				</map>
+			</constructor-arg>
+	</bean>
+
+
+	<bean id="passwordCallback" class="it.csi.dma.farmab.integration.client.ClientPasswordCallback">
+		<property name="userFarmacie" value="@userFarmacie@"></property>
+		<property name="passFarmacie" value="@passFarmacie@"></property>
+	</bean>
+	 <!-- ############### BLOCCO LCCE FINE ############### -->
+
+
+	 <!-- ############### BLOCCO IRIDE INIZIO############### -->
+	 <bean id="irideService"
+			class="it.csi.dma.dmairidecache.IrideCache"
+			factory-bean="cxfirideServiceClientFactory"
+			factory-method="create"/>
+
+	 <bean id="cxfirideServiceClientFactory" class="org.apache.cxf.jaxws.JaxWsProxyFactoryBean">
+		<property name="serviceClass" value="it.csi.dma.dmairidecache.IrideCache"/>
+		<property name="address" value="@endpointIrideUrl@" />
+	</bean>
+
+	 <!-- ############### BLOCCO IRIDE FINE ############### -->
+
+	 <!-- ############### BLOCCO RicercaDocumentiINIService INIZIO############### -->
+	 <bean id="ricercaDocumentiINIService"
+			class="it.csi.ricercadocumentiini.dmacc.RicercaDocumentiINIService"
+			factory-bean="cxfricercaDocumentiINIServiceClientFactory"
+			factory-method="create"/>
+
+	 <bean id="cxfricercaDocumentiINIServiceClientFactory" class="org.apache.cxf.jaxws.JaxWsProxyFactoryBean">
+		<property name="serviceClass" value="it.csi.ricercadocumentiini.dmacc.RicercaDocumentiINIService"/>
+		<property name="address" value="@ricercaDocumentiUrl@" />
+		<!--  property name="conduit" ref="httpConduit"/-->
+		<!--  da usare in versioni più recenti di cxf <property name="features">
+		    <list>
+		      <bean class="org.apache.cxf.feature.TimeoutFeature">
+		        <property name="connectionTimeout" value="2000"/>
+		        <property name="receiveTimeout" value="3000"/>
+		      </bean>
+		    </list>
+		</property-->
+	</bean>
+<!--
+	<bean id="httpConduit" class="org.apache.cxf.transport.http.HTTPConduit">
+  		<property name="client" ref="httpClientPolicy"/>
+	</bean>
+
+	<bean id="httpClientPolicy" class="org.apache.cxf.transports.http.configuration.HTTPClientPolicy">
+  		<property name="connectionTimeout" value="2000"/>
+  		<property name="receiveTimeout" value="3000"/>
+	</bean>
+-->
+	 <!-- ############### BLOCCO RicercaDocumentiINIService FINE ############### -->
+
+	<!-- ############### BLOCCO NOTIF INIZIO ############### -->
+	<bean id="notificatoreUtil" class="it.csi.dma.farmab.util.NotificatoreUtil" >
+ 	 	<property name="notificatoreEndPoint" value="@notificatoreEndPoint@" />
+    	<property name="notificatoreToken" value="@notificatoreToken@" />
+    	<property name="notificatoreURLSansol" value="@notificatoreURLSansol@" />
+	</bean>
+
+	<!-- ############### BLOCCO DELEGHE INIZIO ############### -->
+	<bean id="delegheElencoServizi" class="it.csi.dma.farmab.service.DelegheElencoServizi" >
+ 		<property name="delegheCittadiniClient" ref="delegheCittadiniClient"/>
+ 		<property name="logGeneralDaoCCMed" ref="logGeneralDaoCCMed"/>
+ 	 	<property name="passwordDeleghe" value="@delegheCittadiniPassword@" />
+    	<property name="userDeleghe" value="@delegheCittadiniUser@" />
+    	<property name="encryptionkey" value="@encryptionkey@" />
+	</bean>
+
+	<bean id="logGeneralDaoCCMed" class="it.csi.dma.dmadd.log.dao.impl.LogGeneralDaoImpl">
+		<property name="serviziRichiamatiLowDao" ref="serviziRichiamatiLowDao" />
+	</bean>
+
+	<bean id="serviziRichiamatiLowDao" class="it.csi.dma.dmadd.log.dao.impl.ServiziRichiamatiLowDaoImpl">
+	</bean>
+
+	<bean id="delegheCittadiniClient"
+   		factory-bean="delegheCittadiniClientFactory"
+   		factory-method="create" />
+
+	<bean id="delegheCittadiniClientFactory" class="org.apache.cxf.jaxws.JaxWsProxyFactoryBean">
+	  <property name="serviceClass" value="it.csi.dma.dmadd.deleghebe.DelegheCittadiniService" />
+	  <property name="address" value="@delegheCittadiniAddress@" />
+	  <property name="outInterceptors">
+	   <list>
+	    <ref bean="saajOut" />
+	    <ref bean="wss4jOutDelegheCittadini" />
+	   </list>
+	  </property>
+	</bean>
+
+	<bean id="saajOut" class="org.apache.cxf.binding.soap.saaj.SAAJOutInterceptor" />
+
+	<bean id="wss4jOutDelegheCittadini" class="org.apache.cxf.ws.security.wss4j.WSS4JOutInterceptor">
+	     <constructor-arg>
+	         <map>
+	             <entry key="action" value="UsernameToken" />
+	             <entry key="mustUnderstand" value="0" />
+	             <entry key="user" value="@delegheCittadiniUser@" />
+	             <entry key="passwordType" value="PasswordText" />
+	              <entry key="passwordCallbackRef">
+	                 <ref bean="clientSecurityDelegheCittadino" />
+	             </entry>
+	         </map>
+	     </constructor-arg>
+	 	 </bean>
+
+	  <bean id="clientSecurityDelegheCittadino" class="it.csi.dma.dmacc.integration.client.ClientPasswordCallback">
+	      <property name="password" value="@delegheCittadiniPassword@" />
+	  </bean>
+	 <!-- ############### BLOCCO DELEGHE FINE ############### -->
+
+	 <!-- ############### BLOCCO RICERCA PAZIENTE INIZIO ############### -->
+		 <bean id="pazienteService"
+			  class="it.csi.ricercapaziente.dmaccbl.PazienteService"
+			  factory-bean="UtilityPazienteSecuredClientFactory"
+			  factory-method="create"/>
+
+		<bean id="UtilityPazienteSecuredClientFactory" class="org.apache.cxf.jaxws.JaxWsProxyFactoryBean">
+			<!-- <property name="bindingId" value="http://schemas.xmlsoap.org/soap/envelope/"/> -->
+			<property name="serviceClass" value="it.csi.ricercapaziente.dmaccbl.PazienteService"/>
+			<property name="address" value="@pazienteServiceURL@" />
+			<property name="outInterceptors">
+				<list>
+				  	<ref bean="logOut" />
+					<ref bean="wss4jOutSecuredDma" />
+
+				</list>
+			</property>
+		  	<property name="inInterceptors">
+				<list>
+					<ref bean="logIn" />
+				</list>
+			</property>
+		</bean>
+
+		<bean id="wss4jOutSecuredDma" class="org.apache.cxf.binding.soap.saaj.SAAJOutInterceptor" />
+	 <!-- ############### BLOCCO RICERCA PAZIENTE FINE ############### -->
+
+
+	 	 <!-- ############### BLOCCO PO FSE STATO CONSENSI INIZIO ############### -->
+	 	<bean id="statoConsensiINI"
+		 	class="it.csi.consensoini.dmacc.CCConsensoINIExtServicePortType"
+	   		factory-bean="fseStatoConsensiFactory"
+	   		factory-method="create" />
+
+		<bean id="fseStatoConsensiFactory" class="org.apache.cxf.jaxws.JaxWsProxyFactoryBean">
+		  <property name="serviceClass" value="it.csi.consensoini.dmacc.CCConsensoINIExtServicePortType" />
+		  <property name="address" value="@fseStatoConsensiUrl@" />
+		  <property name="bindingId" value="http://www.w3.org/2003/05/soap/bindings/HTTP/"/>
+		  <property name="outInterceptors">
+
+		   <list>
+		    <ref bean="wss4jOutFseStatoConsensi" />
+		   	<ref bean="logOut" />
+		   </list>
+
+		  </property>
+		  <property name="inInterceptors">
+			<list>
+				<ref bean="logIn" />
+			</list>
+		  </property>
+		</bean>
+
+		<bean id="logIn" class="org.apache.cxf.interceptor.LoggingInInterceptor" >
+
+		</bean>
+
+		<bean id="logOut" class="org.apache.cxf.interceptor.LoggingOutInterceptor" >
+
+		</bean>
+
+		<bean id="wss4jOutFseStatoConsensi" class="org.apache.cxf.ws.security.wss4j.WSS4JOutInterceptor">
+	     <constructor-arg>
+	         <map>
+				 <entry key="action" value=" UsernameToken "/>
+				 <entry key="user" value="@fseStatoConsensiUser@" />
+				 <entry key="passwordCallbackRef" value-ref="passwordCallbackFSE">
+				</entry>
+				 <entry key="passwordType" value="PasswordDigest" />
+			 </map>
+	     </constructor-arg>
+	 	 </bean>
+
+	<bean id="passwordCallbackFSE" class="it.csi.dma.farmab.integration.client.ClientPasswordCallbackFSE">
+		<property name="fseStatoConsensiUser" value="@fseStatoConsensiUser@"></property>
+		<property name="fseStatoConsensiPassword" value="@fseStatoConsensiPassword@"></property>
+	</bean>
+	 <!-- ############### BLOCCO PO FSE STATO CONSENSI FINE ############### -->
+
+
+	<!-- ############### WS DEF ############### -->
+	<jaxws:endpoint id="FarmacieService" implementor="#farmacieServiceWs" address="/FarmacieService">
+		<jaxws:features>
+			<ref bean="serviceFeatureServiziEsterni" />
+		</jaxws:features>
+
+		 <jaxws:outFaultInterceptors>
+    		<bean class="it.csi.dma.farmab.cxf.interceptor.CustomFaultOutInterceptor" />
+  		 </jaxws:outFaultInterceptors>
+	</jaxws:endpoint>
+
+	<bean id="serviceFeatureServiziEsterni" class="it.csi.dma.farmab.cxf.interceptor.ServiceFeature" />
+
+	<bean id="serviceFeature" class="it.csi.dma.farmab.cxf.feature.ServiceFeature" />
+
+	<jaxws:endpoint id="FarabService" implementor="#farabServiceWs" address="/FarabService">
+		<jaxws:features>
+			<ref bean="serviceFeature" />
+		</jaxws:features>
+
+		 <jaxws:outFaultInterceptors>
+    		<bean class="it.csi.dma.farmab.cxf.interceptor.CustomFaultOutInterceptor" />
+  		 </jaxws:outFaultInterceptors>
+  		 <jaxws:inInterceptors>
+            <bean class="org.apache.cxf.binding.soap.saaj.SAAJInInterceptor" />
+            <ref bean="securityUsrTkenInterceptor" />
+        </jaxws:inInterceptors>
+	</jaxws:endpoint>
+
+
+
+	<jaxws:endpoint id="GetDeviceCertificatoService" implementor="#getDeviceCertificatoServiceWs" address="/GetDeviceCertificatoService">
+		<jaxws:features>
+			<ref bean="serviceFeature" />
+		</jaxws:features>
+
+		 <jaxws:outFaultInterceptors>
+    		<bean class="it.csi.dma.farmab.cxf.interceptor.CustomFaultOutInterceptor" />
+  		 </jaxws:outFaultInterceptors>
+  		 <jaxws:inInterceptors>
+            <bean class="org.apache.cxf.binding.soap.saaj.SAAJInInterceptor" />
+            <ref bean="securityUsrTkenInterceptor" />
+        </jaxws:inInterceptors>
+	</jaxws:endpoint>
+	<jaxws:endpoint id="SetDisassociaDeviceService" implementor="#setDisassociaDeviceServiceWs" address="/SetDisassociaDeviceService">
+		<jaxws:features>
+			<ref bean="serviceFeature" />
+		</jaxws:features>
+
+		 <jaxws:outFaultInterceptors>
+    		<bean class="it.csi.dma.farmab.cxf.interceptor.CustomFaultOutInterceptor" />
+  		 </jaxws:outFaultInterceptors>
+  	    <jaxws:inInterceptors>
+            <bean class="org.apache.cxf.binding.soap.saaj.SAAJInInterceptor" />
+            <ref bean="securityUsrTkenInterceptor" />
+        </jaxws:inInterceptors>
+	</jaxws:endpoint>
+	<jaxws:endpoint id="GetGeneraOtpDeviceService" implementor="#getGeneraOtpDeviceServiceWs" address="/GetGeneraOtpDeviceService">
+		<jaxws:features>
+			<ref bean="serviceFeature" />
+		</jaxws:features>
+
+		 <jaxws:outFaultInterceptors>
+    		<bean class="it.csi.dma.farmab.cxf.interceptor.CustomFaultOutInterceptor" />
+  		 </jaxws:outFaultInterceptors>
+  	    <jaxws:inInterceptors>
+            <bean class="org.apache.cxf.binding.soap.saaj.SAAJInInterceptor" />
+            <ref bean="securityUsrTkenInterceptor" />
+        </jaxws:inInterceptors>
+	</jaxws:endpoint>
+	<jaxws:endpoint id="GetElencoFarmacieAbitualiService" implementor="#getElencoFarmacieAbitualiServiceWs" address="/GetElencoFarmacieAbitualiService">
+		<jaxws:features>
+			<ref bean="serviceFeature" />
+		</jaxws:features>
+		 <jaxws:outFaultInterceptors>
+    		<bean class="it.csi.dma.farmab.cxf.interceptor.CustomFaultOutInterceptor" />
+  		 </jaxws:outFaultInterceptors>
+  	    <jaxws:inInterceptors>
+            <bean class="org.apache.cxf.binding.soap.saaj.SAAJInInterceptor" />
+            <ref bean="securityUsrTkenInterceptor" />
+        </jaxws:inInterceptors>
+	</jaxws:endpoint>
+	<jaxws:endpoint id="SetFarmaciaAbitualeService" implementor="#setFarmaciaAbitualeServiceWs" address="/SetFarmaciaAbitualeService">
+		<jaxws:features>
+			<ref bean="serviceFeature" />
+		</jaxws:features>
+
+		 <jaxws:outFaultInterceptors>
+    		<bean class="it.csi.dma.farmab.cxf.interceptor.CustomFaultOutInterceptor" />
+  		 </jaxws:outFaultInterceptors>
+  	    <jaxws:inInterceptors>
+            <bean class="org.apache.cxf.binding.soap.saaj.SAAJInInterceptor" />
+            <ref bean="securityUsrTkenInterceptor" />
+        </jaxws:inInterceptors>
+	</jaxws:endpoint>
+
+
+
+	<bean id="securityUsrTkenInterceptor" class="org.apache.cxf.ws.security.wss4j.WSS4JInInterceptor">
+		<constructor-arg>
+			<map>
+				<entry key="action" value="UsernameToken" />
+				<entry key="passwordType" value="PasswordDigest" />
+				<entry key="passwordCallbackRef">
+					<bean class="it.csi.dma.farmab.cxf.interceptor.ServerPasswordCallback">
+					</bean>
+				</entry>
+			</map>
+		</constructor-arg>
+	</bean>
+
+</beans>

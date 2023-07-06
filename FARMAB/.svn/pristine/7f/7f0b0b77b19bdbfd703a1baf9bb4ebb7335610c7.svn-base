@@ -1,0 +1,86 @@
+package it.csi.dma.farmab.controller;
+
+import java.util.List;
+
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.context.annotation.Scope;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.core.namedparam.SqlParameterSource;
+import org.springframework.jdbc.core.support.JdbcDaoSupport;
+import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
+
+import it.csi.dma.farmab.domain.DmaccTDispositivoCertificazioneOtpRichDomain;
+import it.csi.dma.farmab.interfacews.msg.getgeneraotpdevice.GetGeneraOtpDeviceRequest;
+import it.csi.dma.farmab.util.Constants;
+
+@Controller
+@Scope(BeanDefinition.SCOPE_PROTOTYPE)
+public class FarmabQueryServizioController extends JdbcDaoSupport{
+	private final static Logger log = Logger.getLogger(Constants.APPLICATION_CODE);
+
+	@Autowired
+	private NamedParameterJdbcTemplate  jdbcTemplate;
+
+	//CAPIRE COSA FARE QUANDO FA L'ENCRYPT
+
+	private static final String QUERY_DMACC_D_SERVIZI_ESTERNI ="SELECT id "
+			+ "	FROM dmacc_d_servizi_esterni "
+			+ "	where codice=:codice;";
+/*
+	private static final String INSERT_L_MESSAGGI ="INSERT INTO dmacc_l_messaggi("
+			+ "	wso2_id, servizio_xml, uuid, chiamante, stato_xml, data_ricezione, data_ins, id_messaggio_orig, cf_utente, ruolo_utente, data_invio_servizio, codice_servizio, ip_richiedente)  "
+			+ "	VALUES ( :wso2_id, :servizio_xml, :uuid, :chiamante, :stato_xml, :data_ricezione, now(), :id_messaggio_orig, :cf_utente, :ruolo_utente, :data_invio_servizio, :codice_servizio, :ip_richiedente);";
+
+	private static final String INSERT_L_XML_MESSAGGI ="INSERT INTO dmacc_l_xml_messaggi("
+			+ "	wso2_id, xml_in, data_inserimento, xml_in_servizio)   "
+			+ "	VALUES ( :wso2_id, :xml_in, now(), :xml_in_servizio);";
+
+	private static final String INSERT_L_ERRORI ="INSERT INTO dmacc_l_errori("
+			+ "	wso2_id, descr_errore, tipo_errore, data_ins, informazioni_aggiuntive)   "
+			+ "	VALUES ( :wso2_id, :descr_errore, :tipo_errore, now(), :informazioni_aggiuntive);";
+
+	//DA RIVEDERE
+	private static final String INSERT_L_LOG_AUDIT ="INSERT INTO dmacc_t_log_audit("
+			+ "	informazioni_tracciate, id_paziente, id_catalogo_log_audit, data_inserimento, id_transazione, id_applicazione_richiedente, id_ruolo, visibilealcittadino, codice_servizio, nome_servizio, ip_chiamante, codice_fiscale_utente)  "
+			+ "	VALUES ((SELECT descrizione FROM dmacc_d_catalogo_log_audit where codice='SET_FARAB'), (SELECT descrizione FROM dmacc_d_catalogo_log_audit where codice='SET_FARAB'), (SELECT descrizione FROM dmacc_d_catalogo_log_audit where codice='SET_FARAB'), now(), :id_transazione, (SELECT descrizione FROM dmacc_d_catalogo_log_audit where codice='SET_FARAB'), (SELECT descrizione FROM dmacc_d_catalogo_log_audit where codice='SET_FARAB'), 'S', 'SET_FARAB', :nome_servizio, :ip_chiamante, :ip_chiamante);";
+
+	private static final String UPDATE_L_MESSAGGI = "UPDATE dmacc_l_messaggi "
+            + "	SET  data_risposta=now(), data_mod=now(), data_risposta_servizio=now(), cod_esito_risposta_servizio=:cod_esito_risposta_servizio "
+            + "	WHERE id_xml=:id_xml );";
+
+	private static final String UPDATE_L_XML_MESSAGGI = "UPDATE dmacc_l_xml_messaggi "
+            + "	SET  xml_out=:xml_out, xml_out_servizio=:xml_out_servizio "
+            + "	WHERE id=:id );";
+
+	private static final String UPDATE_L_LOG_AUDIT = "UPDATE dmacc_t_log_audit "
+            + "	SET  id_catalogo_log_audit=:id_catalogo_log_audit "
+            + "	WHERE id=:id );";
+    */
+
+	public List<Long>  getIdServiziEsterni(String codice){
+		log.info("FarmabFarmacieAbitualiController::getIdServiziEsterni ");
+		SqlParameterSource namedParameters = new MapSqlParameterSource().addValue("codice", codice);
+		return jdbcTemplate.query(QUERY_DMACC_D_SERVIZI_ESTERNI, namedParameters,(rs, rowNum) ->
+		rs.getLong(1));
+	}
+
+	@Transactional
+	public void insertLMessaggi(GetGeneraOtpDeviceRequest getGeneraOtpDevice) {
+		log.info("FarmabFarmacieAbitualiController::insertLMessaggi");
+		try {
+			//SqlParameterSource namedParameters = new MapSqlParameterSource().addValue("deviceNumeroTelefono", getGeneraOtpDevice.getTelCittadino()).addValue("otp", getOTP(Constants.OTP_LENGHT)).addValue("cittadinoCf", getGeneraOtpDevice.getCfCittadino()).addValue("cfRichiedente", getGeneraOtpDevice.getRichiedente().getCodiceFiscale()).addValue("delMin",null);
+			//jdbcTemplate.update(INSERT_L_MESSAGGI, namedParameters);
+			log.debug("Inserito nuovo otp per il cittadino="+getGeneraOtpDevice.getCfCittadino());
+		}catch(Exception e){
+			log.error(e.getMessage());
+		}
+
+		log.error("Errore durante lettura ultimo inserito");
+
+	}
+
+}

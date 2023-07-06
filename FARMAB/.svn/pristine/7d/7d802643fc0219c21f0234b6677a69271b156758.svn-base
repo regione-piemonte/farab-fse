@@ -1,0 +1,56 @@
+package it.csi.dma.farmab.integration.client;
+
+import java.io.IOException;
+
+import javax.security.auth.callback.Callback;
+import javax.security.auth.callback.CallbackHandler;
+import javax.security.auth.callback.UnsupportedCallbackException;
+
+import org.apache.log4j.Logger;
+import org.apache.ws.security.WSPasswordCallback;
+
+import it.csi.dma.farmab.util.Constants;
+
+public class ClientPasswordCallbackFSE  implements CallbackHandler {
+	private final static Logger log = Logger.getLogger(Constants.APPLICATION_CODE);
+	private String fseStatoConsensiUser;
+	private String fseStatoConsensiPassword;
+
+
+
+	@Override
+	public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
+		for (int i = 0; i < callbacks.length; i++) {
+			WSPasswordCallback pc = (WSPasswordCallback) callbacks[i];
+			log.debug("fseStatoConsensiUser: " + fseStatoConsensiUser);
+			log.debug("fseStatoConsensiPassword: " + fseStatoConsensiPassword);
+
+			if (pc.getIdentifier().equals(fseStatoConsensiUser)) {
+				pc.setPassword(fseStatoConsensiPassword);
+			}
+		}
+	}
+
+	public String getFseStatoConsensiUser() {
+		return fseStatoConsensiUser;
+	}
+
+
+
+	public void setFseStatoConsensiUser(String fseStatoConsensiUser) {
+		this.fseStatoConsensiUser = fseStatoConsensiUser;
+	}
+
+
+
+	public String getFseStatoConsensiPassword() {
+		return fseStatoConsensiPassword;
+	}
+
+
+
+	public void setFseStatoConsensiPassword(String fseStatoConsensiPassword) {
+		this.fseStatoConsensiPassword = fseStatoConsensiPassword;
+	}
+
+}

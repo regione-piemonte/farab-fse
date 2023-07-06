@@ -1,0 +1,77 @@
+# This repository adheres to the publiccode.yml standard by including this 
+# metadata file that makes public software easily discoverable.
+# More info at https://github.com/italia/publiccode.yml
+
+publiccodeYmlVersion: '0.2'
+categories:
+  - crm
+  - customer-service-and-support
+description:
+  it:
+    features:
+      - form web
+      - live chat
+    genericName: Servizio on line Assistenza
+    longDescription: |
+      Il servizio consente al cittadino di ritirare i farmaci prescritti su ricette dematerializzate 
+      presentando al farmacista la propria tessera sanitaria.
+      Il servizio usufruisce dei dati presenti nel Fascicolo Sanitario Elettronico per rendere disponibili
+      i numeri di ricetta dematerializzate non scadute e non erogate. 
+      Attraverso i numeri delle ricette ed il codifice fiscale del cittadino, il sistema gestionale della farmacia 
+      può interrogare il sistema nazionale delle ricette dematerializzate (SAC) per ottenere il dettaglio delle reicette
+      e completare le operazioni di erogazione dei farmaci.
+
+
+      Il servizio è realizzato tramite l'integrazione dei seguenti prodotti:
+
+
+      - SANSOL https://github.com/regione-piemonte/sansol/tree/main/XXXX
+
+      - APISAN
+      https://github.com/regione-piemonte/apisan/tree/master/XXXX
+
+      -LCCE
+      https://github.com/regione-piemonte/lcce
+      
+      - APISAN - componente APISANASSISTENZA
+      (https://github.com/regione-piemonte/apisan/tree/master/apisanassistenza)
+
+     
+    shortDescription: |-
+      Il servizio consente al cittadino di ritirare i farmaci prescritti su ricette dematerializzate 
+      presentando al farmacista la propria tessera sanitaria.
+developmentStatus: stable
+it:
+  conforme:
+    gdpr: true
+    lineeGuidaDesign: false
+    misureMinimeSicurezza: true
+    modelloInteroperabilita: false
+  countryExtensionVersion: '0.2'
+  piattaforme:
+    anpr: false
+    cie: true
+    pagopa: false
+    spid: true
+  riuso:
+    codiceIPA: r_piemon
+legal:
+  license: EUPL-1.2
+localisation:
+  availableLanguages:
+    - it
+  localisationReady: false
+maintenance:
+  contacts:
+    - email: liliana.guerra@csi.it
+      name: Liliana Guerra
+  type: internal
+name: 'Consegna ricette in farmacia'
+platforms:
+  - web
+  - ios
+  - android
+releaseDate: '2022-05-12'
+softwareType: standalone/web
+softwareVersion: 14.X.X
+url: 'https://github.com/regione-piemonte/FSE-FARMAB'

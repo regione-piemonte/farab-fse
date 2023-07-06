@@ -1,0 +1,32 @@
+/*******************************************************************************
+* Copyright Regione Piemonte - 2023
+* SPDX-License-Identifier: EUPL-1.2
+******************************************************************************/
+
+package it.csi.dma.farmab.service;
+
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Service;
+
+import it.csi.dma.farmab.util.Constants;
+
+@Service
+@Scope(BeanDefinition.SCOPE_PROTOTYPE)
+public class FarmacieElencoServizi {
+	
+	private final static Logger log = Logger.getLogger(Constants.APPLICATION_CODE);
+	
+	public void getFarmacieAderenti() {
+		log.info("FarmacieElencoServizi::getFarmacieAderenti");
+		
+	}
+	
+	
+	public void verificaFarmacistaRequest() {
+		log.info("FarmacieElencoServizi::verificaFarmacistaRequest");
+		
+	}
+
+}

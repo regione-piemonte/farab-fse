@@ -1,0 +1,32 @@
+# Farmacia abituale
+
+## note per la configurazione in locale e per il deploy su nuovi server copiare il file farmab-keys.jks nella cartella D:\keystore mentre gli altri ambienti verificare i percorsi nei file *.properties
+
+credenziali per accedere ai ws in ambiente di test e local
+http://localhost:10110/farmab/FarmacieService
+https://tst-bejava-dma.isan.csi.it/farmab/FarmacieService
+basic authentication user: csi.demo 20@ipa password:Pi$Mont!2022 pin:T$r!n1
+
+per i ws fruiti anche dal rosso
+user:dmacmpa password:mypass e passwordType:PasswordDigest
+
+## URL AMAZON ws di cifratura ATTENZIONE i certificati nel JKS devono avere la password PIEMONTE !!!!!
+###test
+http://ec2-15-236-91-187.eu-west-3.compute.amazonaws.com:8080/farmabcipher/cripta?stringa=RGGLDN52A53H501E
+http://ec2-15-236-91-187.eu-west-3.compute.amazonaws.com:8080/farmabcipher/demo20pk/cripta?stringa=AAAAAAAA
+###PROD
+http://ec2-15-236-91-187.eu-west-3.compute.amazonaws.com:8080/farmabcipher/prodfseprivkey/cripta?stringa=RGGLDN52A53H501E
+
+###Note per la rigenerazione dei ws
+###iccws ws farmacie
+arg -encoding UTF8 -p http://dmaccbl.csi.it/=it.csi.iccws.dmaccbl -p http://dmacc.csi.it/=it.csi.iccws.dmacc -p http://dma.csi.it/=it.csi.iccws.dma
+per il bind
+<jaxb:bindings version="2.1"
+xmlns:jaxb="http://java.sun.com/xml/ns/jaxb"
+xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc"
+xmlns:xs="http://www.w3.org/2001/XMLSchema">
+   <jaxb:globalBindings generateElementPro
+
+
+###RicercaDocumentiINIService (in soapui Tool ARGS)
+-encoding UTF8 -p http://dmacc.csi.it/=it.csi.ricercadocumentiini.dmacc -p http://dma.csi.it/=it.csi.ricercadocumentiini.dma

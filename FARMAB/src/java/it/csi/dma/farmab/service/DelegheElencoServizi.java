@@ -1,0 +1,650 @@
+/*******************************************************************************
+* Copyright Regione Piemonte - 2023
+* SPDX-License-Identifier: EUPL-1.2
+******************************************************************************/
+
+package it.csi.dma.farmab.service;
+
+import java.util.ArrayList;
+
+import java.util.Iterator;
+import java.util.List;
+
+
+import javax.xml.ws.BindingProvider;
+
+import org.apache.cxf.frontend.ClientProxy;
+import org.apache.cxf.transport.http.HTTPConduit;
+import org.apache.cxf.transports.http.configuration.ConnectionType;
+import org.apache.cxf.transports.http.configuration.HTTPClientPolicy;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.context.annotation.Scope;
+
+import it.csi.dma.dmadd.deleghebe.ApplicazioneRichiedente;
+import it.csi.dma.dmadd.deleghebe.Cittadino;
+import it.csi.dma.dmadd.deleghebe.DelegaCittadino;
+import it.csi.dma.dmadd.deleghebe.DelegaServizio;
+import it.csi.dma.dmadd.deleghebe.DelegheCittadiniService;
+import it.csi.dma.dmadd.deleghebe.GetDeleganti;
+import it.csi.dma.dmadd.deleghebe.GetDelegantiResponse;
+import it.csi.dma.dmadd.log.bean.LogGeneralDaoBean;
+import it.csi.dma.dmadd.log.dao.LogGeneralDao;
+import it.csi.dma.dmadd.log.dto.ServiziRichiamatiLowDto;
+import it.csi.dma.dmadd.util.Utils;
+import it.csi.dma.dmafarma.ElencoRicetteFarmaciaRequest;
+import it.csi.dma.dmafarma.GetDelegantiFarmaciaRequest;
+import it.csi.dma.dmadd.deleghebe.DelegaCittadino.Deleghe;
+import it.csi.dma.dmadd.interfacews.sol.Errore;
+import it.csi.dma.dmacc.interfacews.PazienteService;
+import it.csi.dma.dmacc.integration.client.ServiceClientException;
+import it.csi.dma.dmacc.integration.client.ServiceClientSystemException;
+import it.csi.dma.dmacc.interfacews.RicercaPaziente;
+import it.csi.dma.dmacc.interfacews.RicercaPazienteResponse;
+import it.csi.dma.farmab.controller.FarmabQueryServizioController;
+import it.csi.dma.farmab.interfacews.msg.getelencofarmacieabituali.GetElencoFarmacieAbitualiRequest;
+import it.csi.dma.farmab.interfacews.msg.setfarmaciaabituale.SetFarmaciaAbitualeRequest;
+import it.csi.dma.dmadd.interfacews.Richiedente;
+import it.csi.dma.dmadd.interfacews.RuoloDMA;
+import it.csi.dma.dmadd.interfacews.ApplicativoVerticale;
+import it.csi.dma.dmadd.interfacews.Paziente;
+import it.csi.dma.dmadd.interfacews.RegimeDMA;
+import it.csi.dma.farmab.util.Constants;
+
+@Service
+@Scope(BeanDefinition.SCOPE_PROTOTYPE)
+public class DelegheElencoServizi {
+	
+	private final static Logger log = Logger.getLogger(Constants.APPLICATION_CODE);
+	
+	private DelegheCittadiniService delegheCittadiniClient;
+	private LogGeneralDao logGeneralDaoCCMed;
+	private String passwordDeleghe;
+	private String userDeleghe;
+	private String encryptionkey;
+	
+	@Autowired
+	FarmabQueryServizioController farmabQueryServizioController;
+	
+	//METODO PER IL SET DELLE FARMACIE ABITUALI
+	public GetDelegantiResponse getDelegantiPerSetFarmaciaAbituale(SetFarmaciaAbitualeRequest setFarmaciaAbituale) throws Exception{
+		log.info("DelegheElencoServizi::getDelegantiPerSetFarmaciaAbituale");
+		GetDeleganti req = new GetDeleganti();	
+		GetDelegantiResponse response = new GetDelegantiResponse();
+		
+		try{
+			req = componiRequestSetFarmaciaAbituale(setFarmaciaAbituale);
+			
+			//LA URL PER DELEGHE VIENE RECUPERATA DAL FILE DI PROPERITES TRAMITE L'OGGETTO delegheCittadiniClient
+			BindingProvider prov = (BindingProvider)delegheCittadiniClient;
+			//USER E PWD PER DELEGHE VENGONO RECUPERATI DAL FILE DI PROPERITES
+			prov.getRequestContext().put(BindingProvider.USERNAME_PROPERTY,this.getUserDeleghe());
+			prov.getRequestContext().put(BindingProvider.PASSWORD_PROPERTY, this.getPasswordDeleghe());
+			
+			//inizio aggiunta timeout deleghe
+			org.apache.cxf.endpoint.Client client = ClientProxy.getClient(delegheCittadiniClient);
+			HTTPConduit httpConduit = (HTTPConduit)client.getConduit();
+			HTTPClientPolicy httpClientPolicy = new HTTPClientPolicy();
+			httpClientPolicy.setReceiveTimeout(2000);
+			httpClientPolicy.setConnectionTimeout(1000);
+			httpClientPolicy.setAllowChunking(false);
+			httpClientPolicy.setConnection(ConnectionType.CLOSE);
+			httpConduit.setClient(httpClientPolicy);
+			//fine aggiunta timeout deleghe			
+			
+			LogGeneralDaoBean logGeneralDaoBean = new LogGeneralDaoBean();
+			//COMPOSIZIONE REQUEST PER SCRIVERE SUI LOG
+			String numeroTransazione = setFarmaciaAbituale.getRichiedente().getNumeroTransazione();
+			logGeneralDaoBean = componiRequestDmaccLServiziRichiamati(logGeneralDaoBean, numeroTransazione, Constants.GET_DELEGANTI, Utils.xmlMessageFromObject(req), this.getEncryptionkey());
+			//SCRITTURA SULLA TABELLA DMACC_L_SERVIZI_RICHIAMATI
+			log.info("getDelegantiPerSetFarmaciaAbituale::INIZIO INSERT SULLA DMACC_L_SERVIZI_RICHIAMATI");
+			getLogGeneralDaoCCMed().logServiziRichiamati(logGeneralDaoBean);
+			log.info("getDelegantiPerSetFarmaciaAbituale::FINE INSERT SULLA DMACC_L_SERVIZI_RICHIAMATI");
+			
+			log.info("getDelegantiPerSetFarmaciaAbituale::INIZIO CHIAMATA A DELEGHE");
+			long startTime = System.currentTimeMillis();
+			log.info("RICHIAMO SERVIZIO ESTERNO DelegheElencoServizi.getDelegantiPerSetFarmaciaAbituale.getDelegantiService");
+			response = delegheCittadiniClient.getDelegantiService(req);	
+			log.info("RISPOSTA SERVIZIO ESTERNO DelegheElencoServizi.getDelegantiPerSetFarmaciaAbituale.getDelegantiService:"+(System.currentTimeMillis()-startTime)+" Millis");
+			log.info("getDelgetDelegantiPerSetFarmaciaAbitualeeganti::FINE CHIAMATA A DELEGHE");
+			
+			//IN CASO DI ERRORE SI SCRIVE SULLA TABELLA DMACC_L_ERRORI_SERVIZI_RICHIAMATI
+			if(response!=null) {
+				if(response.getErrori()!= null && !response.getErrori().isEmpty()) {
+					List<Errore> erroriLogList = getListaErroriLog(response.getErrori());
+					//UPDATE SULLA DMACC_L_ERRORI_SERVIZI_RICHIAMATI
+					log.info("getDelegantiPerSetFarmaciaAbituale::INIZIO UPDATE SULLA DMACC_L_ERRORI_SERVIZI_RICHIAMATI: FALLIMENTO");
+					getLogGeneralDaoCCMed().logServiziRichiamatiEnd(logGeneralDaoBean, Constants.FAIL_CODE, Utils.xmlMessageFromObject(response), erroriLogList,  Constants.MODULO_DELEGHE, this.getEncryptionkey());
+					log.info("getDelegantiPerSetFarmaciaAbituale::FINE UPDATE SULLA DMACC_L_ERRORI_SERVIZI_RICHIAMATI: FALLIMENTO");
+					return response;
+				}
+			}
+			
+			//SE NON CI SONO ERRORI DOPO LA CHIAMATA A DELEGHE, UPDATE TABELLA DMACC_L_SERVIZI_RICHIAMATI
+			log.info("getDelegantiPerSetFarmaciaAbituale::INIZIO UPDATE SULLA DMACC_L_SERVIZI_RICHIAMATI: SUCCESSO");
+			getLogGeneralDaoCCMed().logServiziRichiamatiEnd(logGeneralDaoBean, Constants.SUCCESS_CODE_MINUSCOLO, Utils.xmlMessageFromObject(response), null, Constants.MODULO_DELEGHE, this.getEncryptionkey());
+			log.info("getDelegantiPerSetFarmaciaAbituale::FINE UPDATE SULLA DMACC_L_SERVIZI_RICHIAMATI: SUCCESSO");
+	
+			//DA USARE SOLO IN FASE DI TEST
+			//stampaResponse(response);
+		} catch (Exception e) {
+			e.printStackTrace();
+			//TODO CREARE UNA ECCEZIONE GESTITA IN CASO DI FALLIMENTO CHIAMATA A DELEGHE
+		}
+		
+		return response;
+	}
+	
+	//METODO PER IL GET DELLE FARMACIE ABITUALI
+	public GetDelegantiResponse getDelegantiPerGetFarmaciaAbituale(GetElencoFarmacieAbitualiRequest getElencoFarmacieAbituali) throws Exception{
+		log.info("DelegheElencoServizi::getDelegantiPerGetFarmaciaAbituale");
+		GetDeleganti req = new GetDeleganti();	
+		GetDelegantiResponse response = new GetDelegantiResponse();
+		
+		try{
+			req = componiRequestGetFarmaciaAbituale(getElencoFarmacieAbituali);
+			
+			//LA URL PER DELEGHE VIENE RECUPERATA DAL FILE DI PROPERITES TRAMITE L'OGGETTO delegheCittadiniClient
+			BindingProvider prov = (BindingProvider)delegheCittadiniClient;
+			//USER E PWD PER DELEGHE VENGONO RECUPERATI DAL FILE DI PROPERITES
+			prov.getRequestContext().put(BindingProvider.USERNAME_PROPERTY,this.getUserDeleghe());
+			prov.getRequestContext().put(BindingProvider.PASSWORD_PROPERTY, this.getPasswordDeleghe());
+			
+			//inizio aggiunta timeout deleghe
+			org.apache.cxf.endpoint.Client client = ClientProxy.getClient(delegheCittadiniClient);
+			HTTPConduit httpConduit = (HTTPConduit)client.getConduit();
+			HTTPClientPolicy httpClientPolicy = new HTTPClientPolicy();
+			httpClientPolicy.setReceiveTimeout(2000);
+			httpClientPolicy.setConnectionTimeout(1000);
+			httpClientPolicy.setAllowChunking(false);
+			httpClientPolicy.setConnection(ConnectionType.CLOSE);
+			httpConduit.setClient(httpClientPolicy);
+			//fine aggiunta timeout deleghe			
+			
+			LogGeneralDaoBean logGeneralDaoBean = new LogGeneralDaoBean();
+			//COMPOSIZIONE REQUEST PER SCRIVERE SUI LOG
+			String numeroTransazione = getElencoFarmacieAbituali.getRichiedente().getNumeroTransazione();
+			logGeneralDaoBean = componiRequestDmaccLServiziRichiamati(logGeneralDaoBean, numeroTransazione, Constants.GET_DELEGANTI, Utils.xmlMessageFromObject(req), this.getEncryptionkey());
+			//SCRITTURA SULLA TABELLA DMACC_L_SERVIZI_RICHIAMATI
+			log.info("getDelegantiPerGetFarmaciaAbituale::INIZIO INSERT SULLA DMACC_L_SERVIZI_RICHIAMATI");
+			getLogGeneralDaoCCMed().logServiziRichiamati(logGeneralDaoBean);
+			log.info("getDelegantiPerGetFarmaciaAbituale::FINE INSERT SULLA DMACC_L_SERVIZI_RICHIAMATI");
+			
+			log.info("getDelegantiPerGetFarmaciaAbituale::INIZIO CHIAMATA A DELEGHE");
+			long startTime = System.currentTimeMillis();
+			log.info("RICHIAMO SERVIZIO ESTERNO DelegheElencoServizi.getDelegantiPerGetFarmaciaAbituale.getDelegantiService");
+			response = delegheCittadiniClient.getDelegantiService(req);	
+			log.info("RISPOSTA SERVIZIO ESTERNO DelegheElencoServizi.getDelegantiPerGetFarmaciaAbituale.getDelegantiService:"+(System.currentTimeMillis()-startTime)+" Millis");
+			log.info("getDelegantiPerGetFarmaciaAbituale::FINE CHIAMATA A DELEGHE");
+			
+			//IN CASO DI ERRORE SI SCRIVE SULLA TABELLA DMACC_L_ERRORI_SERVIZI_RICHIAMATI
+			if(response!=null) {
+				if(response.getErrori()!= null && !response.getErrori().isEmpty()) {
+					List<Errore> erroriLogList = getListaErroriLog(response.getErrori());
+					//UPDATE SULLA DMACC_L_ERRORI_SERVIZI_RICHIAMATI
+					log.info("getDelegantiPerGetFarmaciaAbituale::INIZIO UPDATE SULLA DMACC_L_ERRORI_SERVIZI_RICHIAMATI: FALLIMENTO");
+					getLogGeneralDaoCCMed().logServiziRichiamatiEnd(logGeneralDaoBean, Constants.FAIL_CODE, Utils.xmlMessageFromObject(response), erroriLogList,  Constants.MODULO_DELEGHE, this.getEncryptionkey());
+					log.info("getDelegantiPerGetFarmaciaAbituale::FINE UPDATE SULLA DMACC_L_ERRORI_SERVIZI_RICHIAMATI: FALLIMENTO");
+					return response;
+				}
+			}
+			
+			//SE NON CI SONO ERRORI DOPO LA CHIAMATA A DELEGHE, UPDATE TABELLA DMACC_L_SERVIZI_RICHIAMATI
+			log.info("getDelegantiPerGetFarmaciaAbituale::INIZIO UPDATE SULLA DMACC_L_SERVIZI_RICHIAMATI: SUCCESSO");
+			getLogGeneralDaoCCMed().logServiziRichiamatiEnd(logGeneralDaoBean, Constants.SUCCESS_CODE_MINUSCOLO, Utils.xmlMessageFromObject(response), null, Constants.MODULO_DELEGHE, this.getEncryptionkey());
+			log.info("getDelegantiPerGetFarmaciaAbituale::FINE UPDATE SULLA DMACC_L_SERVIZI_RICHIAMATI: SUCCESSO");
+	
+			//DA USARE SOLO IN FASE DI TEST
+			stampaResponse(response);
+		} catch (Exception e) {
+			e.printStackTrace();
+			//TODO CREARE UNA ECCEZIONE GESTITA IN CASO DI FALLIMENTO CHIAMATA A DELEGHE
+		}
+		
+		return response;
+	}
+	
+	//METODO PER IL GET DELEGANTI FARMACIA
+	public GetDelegantiResponse getDelegantiFarmacia(GetDelegantiFarmaciaRequest requestDelegantiFarmacia, String wso2id) throws Exception{
+		log.info("DelegheElencoServizi::getDelegantiFarmacia");
+		GetDeleganti req = new GetDeleganti();	
+		GetDelegantiResponse response = new GetDelegantiResponse();
+		
+		try{
+			req = componiRequestGetDelegantiFarmacia(requestDelegantiFarmacia);
+			
+			//LA URL PER DELEGHE VIENE RECUPERATA DAL FILE DI PROPERITES TRAMITE L'OGGETTO delegheCittadiniClient
+			BindingProvider prov = (BindingProvider)delegheCittadiniClient;
+			//USER E PWD PER DELEGHE VENGONO RECUPERATI DAL FILE DI PROPERITES
+			prov.getRequestContext().put(BindingProvider.USERNAME_PROPERTY,this.getUserDeleghe());
+			prov.getRequestContext().put(BindingProvider.PASSWORD_PROPERTY, this.getPasswordDeleghe());
+			
+			//inizio aggiunta timeout deleghe
+			org.apache.cxf.endpoint.Client client = ClientProxy.getClient(delegheCittadiniClient);
+			HTTPConduit httpConduit = (HTTPConduit)client.getConduit();
+			HTTPClientPolicy httpClientPolicy = new HTTPClientPolicy();
+			httpClientPolicy.setReceiveTimeout(2000);
+			httpClientPolicy.setConnectionTimeout(1000);
+			httpClientPolicy.setAllowChunking(false);
+			httpClientPolicy.setConnection(ConnectionType.CLOSE);
+			httpConduit.setClient(httpClientPolicy);
+			//fine aggiunta timeout deleghe			
+			
+			LogGeneralDaoBean logGeneralDaoBean = new LogGeneralDaoBean();
+			//COMPOSIZIONE REQUEST PER SCRIVERE SUI LOG
+			String numeroTransazione = wso2id;
+			logGeneralDaoBean = componiRequestDmaccLServiziRichiamati(logGeneralDaoBean, numeroTransazione, Constants.GET_DELEGANTI, Utils.xmlMessageFromObject(req), this.getEncryptionkey());
+			//SCRITTURA SULLA TABELLA DMACC_L_SERVIZI_RICHIAMATI
+			log.info("getDelegantiFarmacia::INIZIO INSERT SULLA DMACC_L_SERVIZI_RICHIAMATI");
+			getLogGeneralDaoCCMed().logServiziRichiamati(logGeneralDaoBean);
+			log.info("getDelegantiFarmacia::FINE INSERT SULLA DMACC_L_SERVIZI_RICHIAMATI");
+			
+			log.info("getDelegantiFarmacia::INIZIO CHIAMATA A DELEGHE");
+			long startTime = System.currentTimeMillis();
+			log.info("RICHIAMO SERVIZIO ESTERNO DelegheElencoServizi.getDelegantiFarmacia.getDelegantiService");
+			response = delegheCittadiniClient.getDelegantiService(req);	
+			log.info("RISPOSTA SERVIZIO ESTERNO DelegheElencoServizi.getDelegantiFarmacia.getDelegantiService:"+(System.currentTimeMillis()-startTime)+" Millis");
+			log.info("getDelegantiFarmacia::FINE CHIAMATA A DELEGHE");
+			
+			//IN CASO DI ERRORE SI SCRIVE SULLA TABELLA DMACC_L_ERRORI_SERVIZI_RICHIAMATI
+			if(response!=null) {
+				if(response.getErrori()!= null && !response.getErrori().isEmpty()) {
+					List<Errore> erroriLogList = getListaErroriLog(response.getErrori());
+					//UPDATE SULLA DMACC_L_ERRORI_SERVIZI_RICHIAMATI
+					log.info("getDelegantiFarmacia::INIZIO UPDATE SULLA DMACC_L_ERRORI_SERVIZI_RICHIAMATI: FALLIMENTO");
+					getLogGeneralDaoCCMed().logServiziRichiamatiEnd(logGeneralDaoBean, Constants.FAIL_CODE, Utils.xmlMessageFromObject(response), erroriLogList,  Constants.MODULO_DELEGHE, this.getEncryptionkey());
+					log.info("getDelegantiFarmacia::FINE UPDATE SULLA DMACC_L_ERRORI_SERVIZI_RICHIAMATI: FALLIMENTO");
+					return response;
+				}
+			}
+			
+			//SE NON CI SONO ERRORI DOPO LA CHIAMATA A DELEGHE, UPDATE TABELLA DMACC_L_SERVIZI_RICHIAMATI
+			log.info("getDelegantiFarmacia::INIZIO UPDATE SULLA DMACC_L_SERVIZI_RICHIAMATI: SUCCESSO");
+			getLogGeneralDaoCCMed().logServiziRichiamatiEnd(logGeneralDaoBean, Constants.SUCCESS_CODE_MINUSCOLO, Utils.xmlMessageFromObject(response), null, Constants.MODULO_DELEGHE, this.getEncryptionkey());
+			log.info("getDelegantiFarmacia::FINE UPDATE SULLA DMACC_L_SERVIZI_RICHIAMATI: SUCCESSO");
+	
+			//DA USARE SOLO IN FASE DI TEST
+			stampaResponse(response);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			//TODO CREARE UNA ECCEZIONE GESTITA IN CASO DI FALLIMENTO CHIAMATA A DELEGHE
+		}
+		
+		return response;
+	}
+	
+	
+	//METODO PER IL GET DELEGANTI FARMACIA
+	public GetDelegantiResponse elencoRicetteFarmacia(ElencoRicetteFarmaciaRequest requestRicetteFarmacia, String wso2id) throws Exception{
+		log.info("DelegheElencoServizi::getDelegantiFarmacia");
+		GetDeleganti req = new GetDeleganti();	
+		GetDelegantiResponse response = new GetDelegantiResponse();
+		
+		try{
+			req = componiRequestElencoRicetteFarmacia(requestRicetteFarmacia);
+			
+			//LA URL PER DELEGHE VIENE RECUPERATA DAL FILE DI PROPERITES TRAMITE L'OGGETTO delegheCittadiniClient
+			BindingProvider prov = (BindingProvider)delegheCittadiniClient;
+			//USER E PWD PER DELEGHE VENGONO RECUPERATI DAL FILE DI PROPERITES
+			prov.getRequestContext().put(BindingProvider.USERNAME_PROPERTY,this.getUserDeleghe());
+			prov.getRequestContext().put(BindingProvider.PASSWORD_PROPERTY, this.getPasswordDeleghe());
+			
+			//inizio aggiunta timeout deleghe
+			org.apache.cxf.endpoint.Client client = ClientProxy.getClient(delegheCittadiniClient);
+			HTTPConduit httpConduit = (HTTPConduit)client.getConduit();
+			HTTPClientPolicy httpClientPolicy = new HTTPClientPolicy();
+			httpClientPolicy.setReceiveTimeout(2000);
+			httpClientPolicy.setConnectionTimeout(1000);
+			httpClientPolicy.setAllowChunking(false);
+			httpClientPolicy.setConnection(ConnectionType.CLOSE);
+			httpConduit.setClient(httpClientPolicy);
+			//fine aggiunta timeout deleghe			
+			
+			LogGeneralDaoBean logGeneralDaoBean = new LogGeneralDaoBean();
+			//COMPOSIZIONE REQUEST PER SCRIVERE SUI LOG
+			String numeroTransazione = wso2id;
+			logGeneralDaoBean = componiRequestDmaccLServiziRichiamati(logGeneralDaoBean, numeroTransazione, Constants.GET_DELEGANTI, Utils.xmlMessageFromObject(req), this.getEncryptionkey());
+			//SCRITTURA SULLA TABELLA DMACC_L_SERVIZI_RICHIAMATI
+			log.info("getDelegantiFarmacia::INIZIO INSERT SULLA DMACC_L_SERVIZI_RICHIAMATI");
+			getLogGeneralDaoCCMed().logServiziRichiamati(logGeneralDaoBean);
+			log.info("getDelegantiFarmacia::FINE INSERT SULLA DMACC_L_SERVIZI_RICHIAMATI");
+			
+			long startTime = System.currentTimeMillis();
+			log.info("RICHIAMO SERVIZIO ESTERNO DelegheElencoServizi.elencoRicetteFarmacia.getDelegantiService");
+			response = delegheCittadiniClient.getDelegantiService(req);	
+			log.info("RISPOSTA SERVIZIO ESTERNO DelegheElencoServizi.elencoRicetteFarmacia.getDelegantiService:"+(System.currentTimeMillis()-startTime)+" Millis");
+			
+			//IN CASO DI ERRORE SI SCRIVE SULLA TABELLA DMACC_L_ERRORI_SERVIZI_RICHIAMATI
+			if(response!=null) {
+				if(response.getErrori()!= null && !response.getErrori().isEmpty()) {
+					List<Errore> erroriLogList = getListaErroriLog(response.getErrori());
+					//UPDATE SULLA DMACC_L_ERRORI_SERVIZI_RICHIAMATI
+					log.info("getDelegantiFarmacia::INIZIO UPDATE SULLA DMACC_L_ERRORI_SERVIZI_RICHIAMATI: FALLIMENTO");
+					getLogGeneralDaoCCMed().logServiziRichiamatiEnd(logGeneralDaoBean, Constants.FAIL_CODE, Utils.xmlMessageFromObject(response), erroriLogList,  Constants.MODULO_DELEGHE, this.getEncryptionkey());
+					log.info("getDelegantiFarmacia::FINE UPDATE SULLA DMACC_L_ERRORI_SERVIZI_RICHIAMATI: FALLIMENTO");
+					return response;
+				}
+			}
+			
+			//SE NON CI SONO ERRORI DOPO LA CHIAMATA A DELEGHE, UPDATE TABELLA DMACC_L_SERVIZI_RICHIAMATI
+			log.info("getDelegantiFarmacia::INIZIO UPDATE SULLA DMACC_L_SERVIZI_RICHIAMATI: SUCCESSO");
+			getLogGeneralDaoCCMed().logServiziRichiamatiEnd(logGeneralDaoBean, Constants.SUCCESS_CODE_MINUSCOLO, Utils.xmlMessageFromObject(response), null, Constants.MODULO_DELEGHE, this.getEncryptionkey());
+			log.info("getDelegantiFarmacia::FINE UPDATE SULLA DMACC_L_SERVIZI_RICHIAMATI: SUCCESSO");
+	
+			//DA USARE SOLO IN FASE DI TEST
+			stampaResponse(response);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			//TODO CREARE UNA ECCEZIONE GESTITA IN CASO DI FALLIMENTO CHIAMATA A DELEGHE
+		}
+		
+		return response;
+	}
+
+
+	//COMPOSIZIONE DELLA REQUEST PER IL SET FARMACIE ABITUALI
+	private GetDeleganti componiRequestSetFarmaciaAbituale(SetFarmaciaAbitualeRequest requestFarmacia)  {
+		log.info("DelegheElencoServizi::componiRequest");
+		//TODO: IN CASO DI REQUEST MALFORMATA COSA FARE?		
+		
+		//DA USARE SOLO IN FASE DI TEST
+		stampaRequestSetFarmacie(requestFarmacia); 
+
+		GetDeleganti req = new GetDeleganti();
+
+		it.csi.dma.dmadd.deleghebe.Richiedente richiedenteDelega = new it.csi.dma.dmadd.deleghebe.Richiedente();
+		
+		richiedenteDelega.setCodiceFiscale(requestFarmacia.getRichiedente().getCodiceFiscale());
+
+		ApplicazioneRichiedente appRichiedente = new ApplicazioneRichiedente();		
+		
+		appRichiedente.setCodice(requestFarmacia.getRichiedente().getApplicazione().getCodice());
+		appRichiedente.setIdRequest(requestFarmacia.getRichiedente().getNumeroTransazione());		
+		richiedenteDelega.setServizio(appRichiedente);
+
+		Cittadino cittadinoDelegato = new Cittadino();
+		cittadinoDelegato.setCodiceFiscale(requestFarmacia.getRichiedente().getCodiceFiscale());
+		
+		req.setCittadinoDelegato(cittadinoDelegato);
+
+		GetDeleganti.StatiDelega statiDelega = new GetDeleganti.StatiDelega();
+	
+		statiDelega.getStatoDelega().add(Constants.STATO_DELEGA);
+		req.setStatiDelega(statiDelega);
+
+		req.setRichiedente(richiedenteDelega);
+
+		return req;
+	}
+	
+	//COMPOSIZIONE DELLA REQUEST PER IL GET FARMACIE ABITUALI
+		private GetDeleganti componiRequestGetFarmaciaAbituale(GetElencoFarmacieAbitualiRequest requestFarmacia)  {
+			log.info("DelegheElencoServizi::componiRequestGetFarmaciaAbituale");
+			//TODO: IN CASO DI REQUEST MALFORMATA COSA FARE?		
+			
+			//DA USARE SOLO IN FASE DI TEST
+			stampaRequestGetFarmacie(requestFarmacia); 
+
+			GetDeleganti req = new GetDeleganti();
+
+			it.csi.dma.dmadd.deleghebe.Richiedente richiedenteDelega = new it.csi.dma.dmadd.deleghebe.Richiedente();
+			
+			richiedenteDelega.setCodiceFiscale(requestFarmacia.getRichiedente().getCodiceFiscale());
+
+			ApplicazioneRichiedente appRichiedente = new ApplicazioneRichiedente();		
+			
+			appRichiedente.setCodice(requestFarmacia.getRichiedente().getApplicazione().getCodice());
+			appRichiedente.setIdRequest(requestFarmacia.getRichiedente().getNumeroTransazione());		
+			richiedenteDelega.setServizio(appRichiedente);
+
+			Cittadino cittadinoDelegato = new Cittadino();
+			cittadinoDelegato.setCodiceFiscale(requestFarmacia.getRichiedente().getCodiceFiscale());
+			
+			req.setCittadinoDelegato(cittadinoDelegato);
+
+			GetDeleganti.StatiDelega statiDelega = new GetDeleganti.StatiDelega();
+		
+			statiDelega.getStatoDelega().add(Constants.STATO_DELEGA);
+			req.setStatiDelega(statiDelega);
+
+			req.setRichiedente(richiedenteDelega);
+
+			return req;
+		}
+		
+		//COMPOSIZIONE DELLA REQUEST PER IL GET DELEGANTI FARMACIE
+		private GetDeleganti componiRequestGetDelegantiFarmacia(GetDelegantiFarmaciaRequest requestDelegantiFarmacia)  {
+			log.info("DelegheElencoServizi::componiRequestGetDelegantiFarmacia");
+			//TODO: IN CASO DI REQUEST MALFORMATA COSA FARE?		
+			
+			//DA USARE SOLO IN FASE DI TEST
+			stampaRequestGetDelegantiFarmacia(requestDelegantiFarmacia); 
+
+			GetDeleganti req = new GetDeleganti();
+
+			it.csi.dma.dmadd.deleghebe.Richiedente richiedenteDelega = new it.csi.dma.dmadd.deleghebe.Richiedente();
+			
+			richiedenteDelega.setCodiceFiscale(requestDelegantiFarmacia.getDatiFarmaciaRichiedente().getCfFarmacista());
+
+			ApplicazioneRichiedente appRichiedente = new ApplicazioneRichiedente();		
+			
+			appRichiedente.setCodice(requestDelegantiFarmacia.getDatiFarmaciaRichiedente().getApplicativoVerticale());
+			appRichiedente.setIdRequest(requestDelegantiFarmacia.getPinCode());		
+			richiedenteDelega.setServizio(appRichiedente);
+
+			Cittadino cittadinoDelegato = new Cittadino();
+			cittadinoDelegato.setCodiceFiscale(requestDelegantiFarmacia.getCfCittadinoDelegato());
+			
+			req.setCittadinoDelegato(cittadinoDelegato);
+
+			GetDeleganti.StatiDelega statiDelega = new GetDeleganti.StatiDelega();
+			statiDelega.getStatoDelega().add(Constants.STATO_DELEGA);
+			req.setStatiDelega(statiDelega);
+
+			GetDeleganti.CodiciServizio codiciServizio = new GetDeleganti.CodiciServizio();
+			codiciServizio.getCodiceServizio().add(Constants.CODICE_SERVIZIO_IN_DELEGHE);
+			req.setCodiciServizio(codiciServizio);
+			
+			req.setRichiedente(richiedenteDelega);
+
+			return req;
+		}
+		
+		//COMPOSIZIONE DELLA REQUEST PER IL ELENCO RICETTE FARMACIE
+		private GetDeleganti componiRequestElencoRicetteFarmacia(ElencoRicetteFarmaciaRequest requestRicetteFarmacia)  {
+			log.info("DelegheElencoServizi::componiRequestElencoRicetteFarmacia");
+			//MANCANTE: IN CASO DI REQUEST MALFORMATA COSA FARE?		
+			
+			//DA USARE SOLO IN FASE DI TEST
+			stampaRequestElencoRicetteFarmacia(requestRicetteFarmacia); 
+
+			GetDeleganti req = new GetDeleganti();
+
+			it.csi.dma.dmadd.deleghebe.Richiedente richiedenteDelega = new it.csi.dma.dmadd.deleghebe.Richiedente();
+			
+			richiedenteDelega.setCodiceFiscale(requestRicetteFarmacia.getDatiFarmaciaRichiedente().getCfFarmacista());
+
+			ApplicazioneRichiedente appRichiedente = new ApplicazioneRichiedente();		
+			
+			appRichiedente.setCodice(requestRicetteFarmacia.getDatiFarmaciaRichiedente().getApplicativoVerticale());
+			appRichiedente.setIdRequest(requestRicetteFarmacia.getPinCode());		
+			richiedenteDelega.setServizio(appRichiedente);
+
+			Cittadino cittadinoDelegato = new Cittadino();
+			cittadinoDelegato.setCodiceFiscale(requestRicetteFarmacia.getCfCittadinoDelegato());
+			
+			req.setCittadinoDelegato(cittadinoDelegato);
+
+			GetDeleganti.StatiDelega statiDelega = new GetDeleganti.StatiDelega();
+			statiDelega.getStatoDelega().add(Constants.STATO_DELEGA);
+			req.setStatiDelega(statiDelega);
+
+			GetDeleganti.CodiciServizio codiciServizio = new GetDeleganti.CodiciServizio();
+			codiciServizio.getCodiceServizio().add(Constants.CODICE_SERVIZIO_IN_DELEGHE);
+			req.setCodiciServizio(codiciServizio);
+			
+			req.setRichiedente(richiedenteDelega);
+
+			return req;
+		}
+
+	//COMPOSIZIONE DELLA REQUEST PER SCRIVERE SULLA TABELLA DI LOG: DMACC_L_SERVIZI_RICHIAMATI 
+	private LogGeneralDaoBean componiRequestDmaccLServiziRichiamati(LogGeneralDaoBean logGeneralDaoBean, String numeroTransazione, String servizioRichiamato, String request, String encryptionKey) throws Exception {
+		ServiziRichiamatiLowDto serviziRichiamatiLowDto = new ServiziRichiamatiLowDto();
+
+
+		List<Long> ids=farmabQueryServizioController.getIdServiziEsterni(servizioRichiamato);
+		ids.forEach(id -> {
+			serviziRichiamatiLowDto.setIdServizio(id);	
+		});	
+		serviziRichiamatiLowDto.setIdTransazione(numeroTransazione);
+		serviziRichiamatiLowDto.setDataChiamata(Utils.sysdate());
+		serviziRichiamatiLowDto.setDataInserimento(Utils.sysdate());
+		serviziRichiamatiLowDto.setRequest(request);
+		serviziRichiamatiLowDto.setEncryptionKey(encryptionKey);
+		
+		//DA USARE SOLO IN FASE DI TEST
+		stampaRequestDmaccLServiziRichiamati(serviziRichiamatiLowDto);
+
+		logGeneralDaoBean.setServiziRichiamatiLowDto(serviziRichiamatiLowDto);
+		return logGeneralDaoBean;
+	}
+	
+	//COMPOSIZIONE DELLA LISTA ERRORI PER LA TABELLA DMACC_L_ERRORI_SERVIZI_RICHIAMATI
+	private List<it.csi.dma.dmadd.interfacews.sol.Errore> getListaErroriLog(List<it.csi.dma.dmadd.deleghebe.Errore> listaErrori) {
+		List<it.csi.dma.dmadd.interfacews.sol.Errore> erroriLogList = new ArrayList<it.csi.dma.dmadd.interfacews.sol.Errore>();
+
+		for (Iterator iterator = listaErrori.iterator(); iterator.hasNext();) {
+			it.csi.dma.dmadd.deleghebe.Errore errore = (it.csi.dma.dmadd.deleghebe.Errore) iterator.next();
+			it.csi.dma.dmadd.interfacews.sol.Errore err = new it.csi.dma.dmadd.interfacews.sol.Errore();
+
+			err.setCodice(errore.getCodice());
+			err.setDescrizione(errore.getDescrizione());
+			erroriLogList.add(err);
+		}
+		return erroriLogList;
+	}
+	
+	
+	//GET E SET PER IL RECUPERO DAL FILE DI PROPERTIES E DAL FILE applicationContext DI: USER, PWD , URL DI DELEGHE, CHIAVE DI ENCRYPTION
+	public String getPasswordDeleghe() {
+		return passwordDeleghe;
+	}
+
+	public void setPasswordDeleghe(String passwordDeleghe) {
+		this.passwordDeleghe = passwordDeleghe;
+	}
+
+	public String getUserDeleghe() {
+		return userDeleghe;
+	}
+
+	public void setUserDeleghe(String userDeleghe) {
+		this.userDeleghe = userDeleghe;
+	}
+	
+	public DelegheCittadiniService getDelegheCittadiniClient() {
+		return delegheCittadiniClient;
+	}
+
+	public void setDelegheCittadiniClient(DelegheCittadiniService delegheCittadiniClient) {
+		this.delegheCittadiniClient = delegheCittadiniClient;
+	}
+	
+	public String getEncryptionkey() {
+		return encryptionkey;
+	}
+
+	public void setEncryptionkey(String encryptionkey) {
+		this.encryptionkey = encryptionkey;
+	} 
+	
+	public LogGeneralDao getLogGeneralDaoCCMed() {
+		return logGeneralDaoCCMed;
+	}
+
+	public void setLogGeneralDaoCCMed(LogGeneralDao logGeneralDaoCCMed) {
+		this.logGeneralDaoCCMed = logGeneralDaoCCMed;
+	}
+	
+
+	
+	
+	//METODO ESCLUSIVAMENTE PER TESTING
+	private void stampaResponse(GetDelegantiResponse response) {
+		if(response!=null) {
+			log.info("ESITO: "+response.getEsito());
+			
+			List <DelegaCittadino> delegheCittadino =response.getDeleganti().getDelegante();
+			if(delegheCittadino != null && !delegheCittadino.isEmpty()) {
+
+				delegheCittadino.forEach(delegaCittadino -> {
+					log.info("CITTADINO UUID: "+delegaCittadino.getUUID());
+					log.info("CITTADINO CF: "+delegaCittadino.getCodiceFiscale());
+					log.info("CITTADINO COGNOME: "+delegaCittadino.getCognome());
+					log.info("CITTADINO LUOGO: "+delegaCittadino.getLuogoNascita());
+					log.info("CITTADINO NOME: "+delegaCittadino.getNome());
+					log.info("CITTADINO SESSO: "+delegaCittadino.getSesso());
+					log.info("CITTADINO STATO: "+delegaCittadino.getStato());
+					log.info("CITTADINO ID AURA: "+delegaCittadino.getIdAura());
+					
+					Deleghe deleghe = delegaCittadino.getDeleghe();
+					List <DelegaServizio> delegheServizio =deleghe.getDelega();
+					delegheServizio.forEach(delegaServizio -> {
+						//log.info("DELEGASERVIZIO CODICE SERVIZIO: "+delegaServizio.getCodiceServizio());
+						
+					});
+
+			      });
+
+			}
+		}		
+	}
+	
+	//METODO ESCLUSIVAMENTE PER TESTING
+	private void stampaRequestSetFarmacie(SetFarmaciaAbitualeRequest requestFarmacia) {
+		log.info("requestFarmacia.getRichiedente().getCodiceFiscale(): "+requestFarmacia.getRichiedente().getCodiceFiscale());
+		log.info("requestFarmacia.getRichiedente().getApplicazione().getCodice(): "+requestFarmacia.getRichiedente().getApplicazione().getCodice());
+		log.info("requestFarmacia.getRichiedente().getNumeroTransazione(): "+requestFarmacia.getRichiedente().getNumeroTransazione());
+		log.info("requestFarmacia.getCfCittadino(); "+requestFarmacia.getCfCittadino());		
+	}
+	
+	//METODO ESCLUSIVAMENTE PER TESTING
+	private void stampaRequestGetFarmacie(GetElencoFarmacieAbitualiRequest requestFarmacia) {
+		log.info("requestFarmacia.getRichiedente().getCodiceFiscale(): "+requestFarmacia.getRichiedente().getCodiceFiscale());
+		log.info("requestFarmacia.getRichiedente().getApplicazione().getCodice(): "+requestFarmacia.getRichiedente().getApplicazione().getCodice());
+		log.info("requestFarmacia.getRichiedente().getNumeroTransazione(): "+requestFarmacia.getRichiedente().getNumeroTransazione());
+		log.info("requestFarmacia.getCfCittadino(); "+requestFarmacia.getCfCittadino());		
+	}
+	
+	//METODO ESCLUSIVAMENTE PER TESTING
+	private void stampaRequestDmaccLServiziRichiamati(ServiziRichiamatiLowDto serviziRichiamatiLowDto) {
+		log.info("stampaRequestDmaccLServiziRichiamati getIdServizio: "+serviziRichiamatiLowDto.getIdServizio());
+		log.info("stampaRequestDmaccLServiziRichiamati getIdTransazione: "+serviziRichiamatiLowDto.getIdTransazione());
+		log.info("stampaRequestDmaccLServiziRichiamati getDataChiamata: "+serviziRichiamatiLowDto.getDataChiamata());
+		log.info("stampaRequestDmaccLServiziRichiamati getDataInserimento: "+serviziRichiamatiLowDto.getDataInserimento());	
+		log.info("stampaRequestDmaccLServiziRichiamati getRequest: "+serviziRichiamatiLowDto.getRequest());	
+		log.info("stampaRequestDmaccLServiziRichiamati getEncryptionKey: "+serviziRichiamatiLowDto.getEncryptionKey());	
+	}
+	
+	//METODO ESCLUSIVAMENTE PER TESTING
+	private void stampaRequestGetDelegantiFarmacia(GetDelegantiFarmaciaRequest requestDelegantiFarmacia) {
+		log.info("CF FARMACISTA: "+requestDelegantiFarmacia.getDatiFarmaciaRichiedente().getCfFarmacista());
+		log.info("APPLICATIVO VERTICALE: "+requestDelegantiFarmacia.getDatiFarmaciaRichiedente().getApplicativoVerticale());
+		log.info("NUMERO TRANSAZIONE: "+requestDelegantiFarmacia.getPinCode());
+		log.info("CD CITTADINO DELEGATO: "+requestDelegantiFarmacia.getCfCittadinoDelegato());		
+	}
+	
+	//METODO ESCLUSIVAMENTE PER TESTING
+	private void stampaRequestElencoRicetteFarmacia(ElencoRicetteFarmaciaRequest requestRicetteFarmacia) {
+		log.info("CF FARMACISTA: "+requestRicetteFarmacia.getDatiFarmaciaRichiedente().getCfFarmacista());
+		log.info("APPLICATIVO VERTICALE: "+requestRicetteFarmacia.getDatiFarmaciaRichiedente().getApplicativoVerticale());
+		log.info("NUMERO TRANSAZIONE: "+requestRicetteFarmacia.getPinCode());
+		log.info("CD CITTADINO DELEGATO: "+requestRicetteFarmacia.getCfCittadinoDelegato());		
+	}
+
+}

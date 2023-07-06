@@ -1,0 +1,38 @@
+import requests
+# This is a sample Python script.
+
+# Press Maiusc+F10 to execute it or replace it with your code.
+# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+
+
+def print_hi(name):
+    # Use a breakpoint in the code line below to debug your script.
+    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+
+
+# Press the green button in the gutter to run the script.
+if __name__ == '__main__':
+    print_hi('PyCharm')
+    api_url = "http://ec2-15-236-91-187.eu-west-3.compute.amazonaws.com:8080/farmabcipher/demo20pk/cripta?stringa="
+
+    # Using readlines()
+    file1 = open('farmacie_pazienti.csv', 'r')
+    Lines = file1.readlines()
+
+    # writing to file
+    with open('farmacie_pazienti_cifrati.csv', 'w') as file1:
+        count = 0
+        # Strips the newline character
+        for line in Lines:
+            count += 1
+            print("Line{}: {}".format(count, line.strip()))
+            if count == 1:
+                file1.writelines(line.strip() + ',codice_fiscale_cifrato\n')
+            else:
+                cf=line.strip().split(",", 1)[0]
+                print(cf)
+                response = requests.get(api_url+cf)
+                print(response.json()["strCriptata"])
+                file1.writelines(line.strip()+',' + response.json()["strCriptata"]+'\n')
+
+    #file1.close()

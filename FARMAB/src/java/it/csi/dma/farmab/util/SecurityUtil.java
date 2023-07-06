@@ -1,0 +1,218 @@
+/*******************************************************************************
+* Copyright Regione Piemonte - 2023
+* SPDX-License-Identifier: EUPL-1.2
+******************************************************************************/
+
+package it.csi.dma.farmab.util;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.KeyPair;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.Base64.Encoder;
+
+import javax.crypto.Cipher;
+
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.context.annotation.Scope;
+import org.springframework.core.env.Environment;
+import org.springframework.stereotype.Controller;
+import org.springframework.util.ResourceUtils;
+
+@Controller
+@Scope(BeanDefinition.SCOPE_PROTOTYPE)
+public class SecurityUtil {
+	public static final char[] KS_PWD = "PIEMONTE".toCharArray();
+	private static String FARMAB_ALIAS;// = "demo20pk";
+
+	@Value("${farmabPathJKS}")
+	private String farmabPathJKS;
+
+	@Value("${farmabAlias}")
+	private String farmabAlias;
+
+	@Autowired
+	Environment environment;
+
+    private static String FARMAB_PATH_JKS;
+
+	public static final String ENC_UTF8 = "UTF-8";
+
+	public static final String RSA = "RSA/ECB/PKCS1Padding";
+	public static final String AES = "AES/CBC/PKCS5Padding";
+
+	static Cipher cipher;
+	private final static Logger log = Logger.getLogger(Constants.APPLICATION_CODE);
+
+	@Value("${farmabPathJKS}")
+	public void setFarmabPathJks(String farmabPathJKS) {
+		SecurityUtil.FARMAB_PATH_JKS =farmabPathJKS;
+	}
+
+	@Value("${farmabAlias}")
+	public void setFarmabAlias(String farmabAlias) {
+		SecurityUtil.FARMAB_ALIAS =farmabAlias;
+	}
+
+/**
+ * https://www.baeldung.com/java-keystore
+ * https://stackoverflow.com/questions/10007147/getting-a-illegalblocksizeexception-data-must-not-be-longer-than-256-bytes-when
+ * https://javapapers.com/java/java-symmetric-aes-encryption-decryption-using-jce/
+ * @throws IOException
+ * @throws CertificateException
+ * @throws KeyStoreException
+ * @throws UnrecoverableKeyException
+ *
+ */
+	public SecurityUtil() throws NoSuchAlgorithmException, UnrecoverableKeyException, KeyStoreException, CertificateException, IOException {
+       super();
+    }
+
+
+	public static KeyPair getKeyPair () throws KeyStoreException, UnrecoverableKeyException, NoSuchAlgorithmException, CertificateException, IOException {
+		log.info("SecurityUtil::getKeyPair");
+		final String keypath = FARMAB_PATH_JKS;
+		String alias=FARMAB_ALIAS;
+		final File file = ResourceUtils.getFile(keypath);
+		final InputStream ksRef = new FileInputStream(file);
+
+		final KeyStore keystore = KeyStore.getInstance("JKS");
+		keystore.load(ksRef, KS_PWD);
+		java.security.cert.Certificate cert = keystore.getCertificate(alias);
+		PublicKey ppk = cert.getPublicKey();
+		PrivateKey pPk = (PrivateKey) keystore.getKey(alias, KS_PWD);
+		if (!keystore.containsAlias(alias)) {
+			 throw new RuntimeException("Alias for key not found");
+		}
+		KeyPair pair = new KeyPair(ppk, pPk);
+		log.debug(pair.toString());
+		return pair;
+	}
+
+	public static String decrypt(String encryptedTextKey) throws Exception {
+		log.info("SecurityUtil::decrypt="+encryptedTextKey);
+		// Getting decoder
+        Base64.Decoder decoder = Base64.getDecoder();
+        String finalMessage="";
+        try {
+        	KeyPair pair=getKeyPair();
+			Cipher cipherDecode = Cipher.getInstance(RSA);
+			cipherDecode.init(Cipher.DECRYPT_MODE, pair.getPrivate());
+			byte[] encMessage = decoder.decode(encryptedTextKey);
+			byte[] decMessage = cipherDecode.doFinal(encMessage);
+			finalMessage = new String (decMessage);
+			log.debug("decrypt="+finalMessage);
+		} catch (Exception e) {
+			log.error(e.getMessage());
+			throw e;
+		}
+        return finalMessage;
+	}
+
+	public static void main(String[] args) {
+		String message = "AAAAAAAA";
+
+		try {
+		Cipher cipher = Cipher.getInstance(RSA);
+		Cipher cipherDecode = Cipher.getInstance(RSA);
+		KeyPair pair = getKeyPair();
+
+		log.debug("Messaggio da cifrare"+message);
+		cipher.init(Cipher.ENCRYPT_MODE, pair.getPublic());
+		cipherDecode.init(Cipher.DECRYPT_MODE, pair.getPrivate());
+		byte[] encryptedByteKey = message.getBytes(ENC_UTF8);
+		byte[] encMessage = cipher.doFinal(encryptedByteKey);
+		byte[] decMessage = cipherDecode.doFinal(encMessage);
+		String finalMessage = new String (decMessage);
+		log.debug(Arrays.toString(encMessage));
+		// Getting decoder
+        Encoder encoder = Base64.getEncoder();
+        String encrBase64=encoder.encodeToString(encMessage);
+        log.debug("Messaggio come deve essere inserito in xml="+encrBase64);
+        decrypt(encrBase64);
+
+        //System.out.println(finalMessage);
+		} catch (Exception e) {
+			log.error(e.getMessage());
+			e.printStackTrace();
+		}
+	}
+
+
+//	public static void main1(String[] args) throws Exception {
+//        KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
+//        keyGenerator.init(128);
+//        SecretKey secretKey = keyGenerator.generateKey();
+//        cipher = Cipher.getInstance("AES");
+//
+//        String plainText = "AAAAAAAAA";
+//        System.out.println("Plain Text Before Encryption: " + plainText);
+//
+//        String encryptedText = encrypt1(plainText, secretKey);
+//        System.out.println("Encrypted Text After Encryption: " + encryptedText);
+//
+//        String decryptedText = decrypt1(encryptedText, secretKey);
+//        System.out.println("Decrypted Text After Decryption: " + decryptedText);
+//    }
+//
+//    public static String encrypt1(String plainText, SecretKey secretKey)
+//            throws Exception {
+//        byte[] plainTextByte = plainText.getBytes();
+//        cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+//        byte[] encryptedByte = cipher.doFinal(plainTextByte);
+//        Base64.Encoder encoder = Base64.getEncoder();
+//        String encryptedText = encoder.encodeToString(encryptedByte);
+//        return encryptedText;
+//    }
+//
+//    public static String decrypt1(String encryptedText, SecretKey secretKey)
+//            throws Exception {
+//        Base64.Decoder decoder = Base64.getDecoder();
+//        byte[] encryptedTextByte = decoder.decode(encryptedText);
+//        cipher.init(Cipher.DECRYPT_MODE, secretKey);
+//        byte[] decryptedByte = cipher.doFinal(encryptedTextByte);
+//        String decryptedText = new String(decryptedByte);
+//        return decryptedText;
+//    }
+//
+//    public static void main(String[] args) throws NoSuchAlgorithmException, IOException {
+//    	SecurityUtil keyPairGenerator = new SecurityUtil();
+//        keyPairGenerator.writeToFile("RSA/publicKey", keyPairGenerator.getPublicKey().getEncoded());
+//        keyPairGenerator.writeToFile("RSA/privateKey", keyPairGenerator.getPrivateKey().getEncoded());
+//        System.out.println(Base64.getEncoder().encodeToString(keyPairGenerator.getPublicKey().getEncoded()));
+//        System.out.println(Base64.getEncoder().encodeToString(keyPairGenerator.getPrivateKey().getEncoded()));
+//    }
+//
+//    public void writeToFile(String path, byte[] key) throws IOException {
+//        File f = new File(path);
+//        f.getParentFile().mkdirs();
+//
+//        FileOutputStream fos = new FileOutputStream(f);
+//        fos.write(key);
+//        fos.flush();
+//        fos.close();
+//    }
+//
+//    public PrivateKey getPrivateKey() {
+//        return privateKey;
+//    }
+//
+//    public PublicKey getPublicKey() {
+//        return publicKey;
+//    }
+
+
+}

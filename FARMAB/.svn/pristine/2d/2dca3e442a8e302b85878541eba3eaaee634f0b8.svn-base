@@ -1,0 +1,10 @@
+target-context=farmab
+
+
+encryptionkey=mypass
+
+
+delegheCittadiniAddress=http://coll-srv-deleghe.isan.csi.it/deleghebe-web/DelegheCittadiniService
+delegheCittadiniUser=user_apisan
+delegheCittadiniPassword=mypass
+

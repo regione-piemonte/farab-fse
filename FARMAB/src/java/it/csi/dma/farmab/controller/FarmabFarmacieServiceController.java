@@ -1,0 +1,74 @@
+/*******************************************************************************
+* Copyright Regione Piemonte - 2023
+* SPDX-License-Identifier: EUPL-1.2
+******************************************************************************/
+
+package it.csi.dma.farmab.controller;
+
+import java.util.List;
+
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.context.annotation.Scope;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.core.namedparam.SqlParameterSource;
+import org.springframework.jdbc.core.support.JdbcDaoSupport;
+import org.springframework.stereotype.Controller;
+
+import it.csi.dma.farmab.domain.DmaccTFarmaciaAbitualeDescDomain;
+import it.csi.dma.farmab.domain.DmaccTFarmaciaOccasionaleRich;
+import it.csi.dma.farmab.domain.DmaccTabelleIdx;
+import it.csi.dma.farmab.util.Constants;
+import it.csi.dma.farmab.util.FarmabUtils;
+
+@Controller
+@Scope(BeanDefinition.SCOPE_PROTOTYPE)
+public class FarmabFarmacieServiceController extends JdbcDaoSupport {
+
+private final static Logger log = Logger.getLogger(Constants.APPLICATION_CODE);
+
+	@Autowired
+	private NamedParameterJdbcTemplate  jdbcTemplate;
+
+	private static final String QUERY_DMACCIDX_T_DOCUMENTO_NOT_IN_DMACCIDX_T_OSCURAMENTO_DOCUMENTO ="SELECT distinct x.id_documento_ilec, x.cod_cl, x.data_validazione, n.nre_rif_doc FROM dmaccidx_t_oscuramento_documento o, dmaccidx_t_documento x, DMACCIDX_T_DOC_NRE n WHERE o.cod_cl=n.cod_cl and o.id_documento_ilec=n.id_documento_ilec and o.cod_cl=x.cod_cl and o.id_documento_ilec=x.id_documento_ilec and oscurato <> 'S' and (o.id_documento_ilec,o.cod_cl) in "
+			+ " (SELECT id_documento_ilec, cod_cl FROM dmaccidx_t_documento d WHERE d.id_paz_irec=:idPazIrec AND d.cod_tipo_documento='57833-6' AND stato_ricetta='P' AND d.data_annullamento IS NULL AND now() <= d.data_validazione + INTERVAL '31 days');";
+
+	private static final String QUERY_DMACC_T_NRE_OSCURATI ="SELECT COUNT(*) "
+			+ "	FROM dmacc_t_nre_oscurati "
+			+ "	WHERE nre=:nre AND id_paziente=:idPaziente;";
+
+	private static final String QUERY_DMACCIDX_T_DOC_MEDICO ="SELECT codice_identificativo_medico "
+			+ "	FROM dmaccidx_t_doc_medico "
+			+ "	where id_documento_ilec=:idDocumentoIlec AND cod_cl=:codCl;";//AND tipo_medico='V';";eliminato il controllo il 24/01/2022 a causa del trigger che lo imposta a R
+
+	public List<DmaccTabelleIdx> cercaDmaccidxTDocumento(Long idPazIrec) {
+		log.info("12A-B.FarmabFarmacieServiceController::cercaDmaccidxTDocumento");
+		List<DmaccTabelleIdx> response=null;
+		SqlParameterSource namedParameters = new MapSqlParameterSource().addValue("idPazIrec", idPazIrec);
+		try {
+			response=jdbcTemplate.query(QUERY_DMACCIDX_T_DOCUMENTO_NOT_IN_DMACCIDX_T_OSCURAMENTO_DOCUMENTO, namedParameters,(rs, rowNum) ->
+			  new DmaccTabelleIdx(rs.getLong(1),rs.getString(2),rs.getString(3),rs.getString(4)));
+		}catch(Exception e) {
+			log.error(e.getMessage());
+			throw e;
+		}
+		return response;
+	}
+
+	public Long esisteDocumentiNREOscurati(String nre, Long idPaziente){
+		log.info("12D.FarmabFarmacieServiceController::cercaDocumentiNREOscurati ");
+		SqlParameterSource namedParameters = new MapSqlParameterSource().addValue("nre", nre).addValue("idPaziente", idPaziente);
+		return jdbcTemplate.query(QUERY_DMACC_T_NRE_OSCURATI, namedParameters,(rs, rowNum) ->
+		rs.getLong(1)).get(0);
+	}
+
+	public List<String> cercaDocumentoMedico(Long idDocumentoIlec, String codCl){
+		log.info("12E.FarmabFarmacieServiceController::cercaDocumentoMedico ");
+		SqlParameterSource namedParameters = new MapSqlParameterSource().addValue("idDocumentoIlec", idDocumentoIlec).addValue("codCl", codCl);
+		return jdbcTemplate.query(QUERY_DMACCIDX_T_DOC_MEDICO, namedParameters,(rs, rowNum) ->
+		rs.getString(1));
+	}
+
+}
