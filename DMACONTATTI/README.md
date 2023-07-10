@@ -1,6 +1,6 @@
 # Componente di Prodotto
 
-DMACONTATTI
+Modulo per la gestione dei contatti dei cittadini
 
 ## Versione
 
