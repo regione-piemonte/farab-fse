@@ -25,13 +25,11 @@ description:
       Il servizio è realizzato tramite l'integrazione dei seguenti prodotti:
 
 
-      - SANSOL https://github.com/regione-piemonte/sansol/tree/main/XXXX
+      - SANSOL https://github.com/regione-piemonte/sansol/tree/main/sansolfarab
 
-      - APISAN
-      https://github.com/regione-piemonte/apisan/tree/master/XXXX
+      - APISAN https://github.com/regione-piemonte/apisan/tree/master/apisanfarm
 
-      -LCCE
-      https://github.com/regione-piemonte/lcce
+      -LCCE https://github.com/regione-piemonte/lcce
       
       - APISAN - componente APISANASSISTENZA
       (https://github.com/regione-piemonte/apisan/tree/master/apisanassistenza)
