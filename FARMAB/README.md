@@ -38,4 +38,4 @@ Per il versionamento del software si faccia riferimento alla specifica Semantic 
 
 ## Copyrights
 
-�� Copyright Regione Piemonte � 2022�
+© Copyright Regione Piemonte – 2023
