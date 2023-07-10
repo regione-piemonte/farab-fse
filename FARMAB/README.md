@@ -4,7 +4,7 @@ FARMAB
 
 ## Versione
 
-1.1.1
+1.1.0
 
 ## Descrizione
 
