@@ -36,5 +36,4 @@ postgres v12.2
 Per il versionamento del software si faccia riferimento alla specifica Semantic Versioning riportata in http://semver.org.
 
 ## Copyrights
-
-�� Copyright Regione Piemonte � 2022�
+© Copyright Regione Piemonte – 2023
