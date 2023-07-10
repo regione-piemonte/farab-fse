@@ -34,6 +34,9 @@ Il prodotto dipende da Web Services del FSE regionale piemontese per la verifica
 ### Sistema di autenticazione
 Il sistema di autenticazione dei servizi utilizzati dai gestionali delle farmacie è basato sull'invocazione di un servizio esposto come web services SOAP
 
+# Installing
+Vedere il file install.pdf nella cartella DOCS 
+
 # Versioning
 Per il versionamento del software si usa la tecnica Semantic Versioning (http://semver.org).
 
