@@ -1,6 +1,7 @@
 # Componente di Prodotto
 
-API per la gestione della scelta della farmacia abituale, l'autorizzazione della farmacia occasionale, la certificazione del device, l'elenco dei delegati e l'elenco delle ricette
+FARMAB
+
 
 ## Versione
 
@@ -8,7 +9,7 @@ API per la gestione della scelta della farmacia abituale, l'autorizzazione della
 
 ## Descrizione
 
-Funzioni di utilit�, utilizzate da DMACONTATTI, FARMAB.
+API per la gestione della scelta della farmacia abituale, l'autorizzazione della farmacia occasionale, la certificazione del device, l'elenco dei delegati e l'elenco delle ricette
 
 ## Prerequisiti di sistema
 
