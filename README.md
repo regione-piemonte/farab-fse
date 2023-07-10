@@ -1,5 +1,8 @@
 ﻿# Prodotto
-Il prodotto ***Consegna ricette in farmacia*** realizza un servizio che consente al paziente di ritirare i farmaci prescritti su ricette dematerializzate presentando al farmacista solamente la propria tessera sanitaria. 
+Il prodotto ***Consegna ricette in farmacia*** realizza un servizio che consente al paziente di ritirare i farmaci prescritti su ricette dematerializzate presentando al farmacista solamente la propria tessera sanitaria.
+
+# Versione
+1.0.0
 
 # Descrizione del prodotto 
 Il prodotto è composto attualmente dalle seguenti componenti 
