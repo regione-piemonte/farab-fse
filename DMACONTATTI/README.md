@@ -1,14 +1,14 @@
 # Componente di Prodotto
 
-FARMAB
+DMACONTATTI
 
 ## Versione
 
-1.1.1
+1.0.0
 
 ## Descrizione
 
-Funzioni di utilit�, utilizzate da DMACONTATTI, FARMAB.
+Funzioni di utilit�, utilizzate da FARMAB.
 
 ## Prerequisiti di sistema
 
