@@ -8,7 +8,7 @@ Modulo per la gestione dei contatti dei cittadini
 
 ## Descrizione
 
-Funzioni di utilit�, utilizzate da FARMAB.
+Funzioni di utilità, utilizzate da FARMAB.
 
 ## Prerequisiti di sistema
 
