@@ -1,6 +1,6 @@
 # Componente di Prodotto
 
-Modulo per la gestione dei contatti dei cittadini
+DMA Contatti
 
 ## Versione
 
@@ -8,7 +8,7 @@ Modulo per la gestione dei contatti dei cittadini
 
 ## Descrizione
 
-Funzioni di utilità, utilizzate da FARMAB.
+Modulo per la gestione dei contatti dei cittadini
 
 ## Prerequisiti di sistema
 
