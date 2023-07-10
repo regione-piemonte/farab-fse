@@ -1,10 +1,10 @@
 # Componente di Prodotto
 
-FARMAB
+API per la gestione della scelta della farmacia abituale, l'autorizzazione della farmacia occasionale, la certificazione del device, l'elenco dei delegati e l'elenco delle ricette
 
 ## Versione
 
-1.1.1
+1.0.0
 
 ## Descrizione
 

@@ -1,14 +1,14 @@
 # Componente di Prodotto
 
-FARMAB
+Modulo per la gestione dei contatti dei cittadini
 
 ## Versione
 
-1.1.1
+1.0.0
 
 ## Descrizione
 
-Funzioni di utilit�, utilizzate da DMACONTATTI, FARMAB.
+Funzioni di utilit�, utilizzate da FARMAB.
 
 ## Prerequisiti di sistema
 
