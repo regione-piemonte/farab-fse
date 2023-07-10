@@ -8,9 +8,9 @@ Il prodotto ***Consegna ricette in farmacia*** realizza un servizio che consente
 Il prodotto è composto attualmente dalle seguenti componenti 
 | Componente |Descrizione  |Versione |
 |--|--|--|
-| DMACONTATTI | modulo per la gestione dei contatti dei cittadini | 1.0.0 |
+| DMACONTATTI(DMACONTATTI) | modulo per la gestione dei contatti dei cittadini | 1.0.0 |
 | DMAIRIDECACHE | modulo per la gestione di una cache temporanea per l'autenticazione dei farmacisti, mediante credenziali RUPARPIEMONTE| 1.0.1 |
-| FARMAB | API per la gestione della scelta della farmacia abituale, l'autorizzazione della farmacia occasionale, la certificazione del device, l'elenco dei delegati e l'elenco delle ricette| 1.0.0 |
+| FARMAB(FARMAB) | API per la gestione della scelta della farmacia abituale, l'autorizzazione della farmacia occasionale, la certificazione del device, l'elenco dei delegati e l'elenco delle ricette| 1.0.0 |
 
 
 Le interfacce utente (implementate con una PWA -progressive web application) per il cittadino sono disponibili sul prodotto (SANSOL) [https://github.com/regione-piemonte/sansol/tree/main/XXXX]
