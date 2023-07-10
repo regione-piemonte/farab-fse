@@ -13,8 +13,8 @@ Il prodotto è composto attualmente dalle seguenti componenti
 | [FARMAB](https://github.com/regione-piemonte/farab-fse/tree/main/FARMAB) | API per la gestione della scelta della farmacia abituale, l'autorizzazione della farmacia occasionale, la certificazione del device, l'elenco dei delegati e l'elenco delle ricette| 1.0.0 |
 
 
-Le interfacce utente (implementate con una PWA -progressive web application) per il cittadino sono disponibili sul prodotto (SANSOL) [https://github.com/regione-piemonte/sansol/tree/main/XXXX]
-La pwa richiama servizi JSON/REST disponibili sul prodotto (APISAN) [https://github.com/regione-piemonte/apisan/tree/master/XXXX]
+Le interfacce utente (implementate con una PWA -progressive web application) per il cittadino sono disponibili sul prodotto (SANSOL) [https://github.com/regione-piemonte/sansol/tree/main/sansolfarab]
+La pwa richiama servizi JSON/REST disponibili sul prodotto (APISAN) [https://github.com/regione-piemonte/apisan/tree/master/apisanfarm]
 La profilazione delle farmacie/farmacisti avviene mediante il prodotto (CONFIGURATORE OPERATORI) [https://github.com/regione-piemonte/lcce]
 
 # Prerequisiti di sistema 
