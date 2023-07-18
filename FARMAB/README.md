@@ -9,7 +9,7 @@ FARMAB
 
 ## Descrizione
 
-API per la gestione della scelta della farmacia abituale, l'autorizzazione della farmacia occasionale, la certificazione del device, l'elenco dei delegati e l'elenco delle ricette
+API per la gestione della scelta della farmacia abituale, l'autorizzazione della farmacia occasionale, la certificazione del device (servizi rivolti all'applicazione web del Punto Assistito e Servizi al Cittadino della Regione Piemonte) e per l'elenco dei delegati e l'elenco delle ricette (servizi rivolti ai gestionali delle Farmacie).
 
 ## Prerequisiti di sistema
 
