@@ -36,8 +36,7 @@ description:
 
      
     shortDescription: |-
-      Il servizio consente al cittadino di ritirare i farmaci prescritti su ricette dematerializzate 
-      presentando al farmacista la propria tessera sanitaria.
+      Il servizio consente al cittadino di ritirare i farmaci prescritti su ricette dematerializzate presentando in farmacia la propria tessera sanitaria.
 developmentStatus: stable
 it:
   conforme:
